@@ -1,0 +1,14 @@
+.env
+.env.*
+.DS_Store
+__pycache__
+*.pyc
+.python-version
+README.docker.md
+scripts
+Dockerfile
+ansible/inventory
+
+# explicitly include files and directories here 
+# that may have been excluded by broader patterns
+!scripts/docker-entrypoint.sh

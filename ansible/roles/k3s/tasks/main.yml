@@ -1,0 +1,95 @@
+# SPDX-License-Identifier: FSL-1.1-ALv2
+# Copyright (c) 2026 Delos Data, Inc.
+---
+- name: Install prerequisite packages
+  apt:
+    name:
+      - curl
+      - ca-certificates
+      - iptables
+      - iproute2
+      - socat
+      - conntrack
+    state: present
+    update_cache: true
+
+- name: Download k3s install script
+  get_url:
+    url: https://get.k3s.io
+    dest: /usr/local/bin/get-k3s.sh
+    mode: "0755"
+
+- name: Install k3s if not already installed
+  command: sh -c "/usr/local/bin/get-k3s.sh"
+  args:
+    creates: /etc/systemd/system/k3s.service
+
+- name: Ensure k3s service is enabled and running
+  systemd:
+    name: k3s
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Wait for kubeconfig to be created
+  wait_for:
+    path: /etc/rancher/k3s/k3s.yaml
+    timeout: 180
+
+- name: Determine home directory for SSH user
+  command: bash -lc "eval echo ~{{ ansible_user }}"
+  register: user_home_cmd
+  changed_when: false
+
+- name: Set user_home fact
+  set_fact:
+    user_home: "{{ user_home_cmd.stdout }}"
+
+- name: Ensure .kube directory exists for SSH user
+  file:
+    path: "{{ user_home }}/.kube"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0700"
+
+- name: Copy kubeconfig for SSH user
+  copy:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: "{{ user_home }}/.kube/config"
+    remote_src: true
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0600"
+
+- name: Wait for K3s cluster to be ready
+  command: k3s kubectl get nodes
+  register: k3s_ready
+  until: k3s_ready.rc == 0
+  retries: 30
+  delay: 10
+
+- name: Get K3s DNS server IP
+  command: k3s kubectl get svc -n kube-system kube-dns -o jsonpath='{.spec.clusterIP}'
+  register: k3s_dns_ip
+  changed_when: false
+
+- name: Set K3s DNS IP fact
+  set_fact:
+    k3s_dns_ip: "{{ k3s_dns_ip.stdout }}"
+
+- name: Ensure systemd resolved config directory exists
+  file:
+    path: /etc/systemd/resolved.conf.d
+    state: directory
+    mode: "0755"
+
+- name: Configure systemd-resolved to use K3s DNS for cluster.local
+  copy:
+    content: |
+      [Resolve]
+      DNS={{ k3s_dns_ip }}
+      Domains=~cluster.local
+    dest: /etc/systemd/resolved.conf.d/k3s-dns.conf
+    mode: "0644"
+  notify: restart systemd-resolved
