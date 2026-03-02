@@ -11,6 +11,22 @@ The framework enables end-to-end testing of the following areas:
 - **Integration Testing**: Automated test execution with proper setup and teardown
 - **Infrastructure Automation**: SSH tunnels, kubeconfig management, and dependency synchronization
 
+## Quick Start
+
+To get tests running with a single command: clone the repo, copy and edit `.env` (from `env.example`) and `ansible/inventory.ini` (from `ansible/inventory.example.ini`) with your host and credentials, then run:
+
+```bash
+git clone <repo-url> production-test-framework
+cd production-test-framework
+cp env.example .env
+cp ansible/inventory.example.ini ansible/inventory.ini
+# Edit .env and ansible/inventory.ini with your hostnames and credentials
+uv sync
+make test
+```
+
+For more detail (prerequisites, cluster setup, other test targets), see the full **Quick Start** guide below.
+
 ## Prerequisites
 
 Before using the framework, ensure you have the following installed:
@@ -170,13 +186,77 @@ Optionally pass the git hash as a build arg: `docker build --build-arg GIT_HASH=
 
 ## Running with Docker
 
-Run the container with SSH agent forwarding so Ansible can reach your hosts, and mount your tests and config as needed:
+### 1. Build and run
+
+Build the image as shown above. To run the container with a minimal setup:
+
+```bash
+docker run -it --rm production-test-framework
+```
+
+The sections below describe how to set environment variables, enable SSH agent forwarding, and mount your test files and mosaic root so you can run tests inside the container.
+
+### 2. Environment variables for the container
+
+The container uses the same environment variables as the non-Docker setup: **`ANSIBLE_REMOTE_USER`**, **`REMOTE_HOST`**, **`CLUSTER`**, and **`ANSIBLE_INVENTORY_FILE`** are required. Optional variables include **`MOSAIC_ROOT`**, **`TESTS_DIR`**, and **`QASE_TESTOPS_API_TOKEN`** (see [Required Environment Variables](#required-environment-variables) above).
+
+You can provide them by:
+
+- **Mounting a `.env` file** into the container (e.g. `-v $(pwd)/.env:/app/framework/.env:ro`). The Makefile loads `.env` from the framework directory when you run `make`.
+- **Passing variables** with `-e VAR=value` or `--env-file` for each run.
+
+If you do not mount a `.env` file, the image uses built-in defaults (see the Dockerfile). Copy [env.example](env.example) to `.env` and edit it for your environment.
+
+### 3. SSH agent forwarding
+
+Ansible inside the container needs to reach your target hosts via SSH. Use SSH agent forwarding so the container can use your host’s keys:
+
+1. On the host, ensure your SSH agent has the key loaded: `ssh-add -l` (use `ssh-add` to add it).
+2. When running the container, pass the agent socket in:
+   - `-e SSH_AUTH_SOCK=/tmp/ssh-agent/socket`
+   - `-v $SSH_AUTH_SOCK:/tmp/ssh-agent/socket`
+
+If SSH connections fail, see [SSH Connection Issues](#ssh-connection-issues) in Troubleshooting.
+
+### 4. Mounting test files and mosaic root
+
+- **Tests:** The framework expects tests at **`TESTS_DIR`**. Inside the container the default is `../tests` (i.e. **`/app/tests`** when the working directory is `/app/framework`). Mount your host tests directory there, e.g. `-v /path/to/your/tests:/app/tests:ro`. Tests are implemented in Python and run with pytest.
+- **Mosaic root:** For **`deploy-helm-charts`** and **`undeploy-helm-charts`**, set **`MOSAIC_ROOT`** and mount the mosaic tree so the expected path exists (e.g. `$(MOSAIC_ROOT)/sw/epsw/charts/mosaic`). For example, mount the host mosaic root at `/app/mosaic` and set `MOSAIC_ROOT=/app/mosaic`: `-v /path/to/mosaic:/app/mosaic:ro`.
+
+A full example that combines `.env`, tests, mosaic, and SSH agent forwarding is shown in the code block in the next section; see also [scripts/launch_framework.sh](scripts/launch_framework.sh).
+
+### 5. Executing tests from the container shell
+
+By default, the container starts an interactive shell in `/app/framework`. The entrypoint prints a banner and runs `make help-container-targets` so you can see available targets. Run tests with `make`:
+
+```bash
+make test
+make test-run-only
+make test-deploy-only
+```
+
+The Makefile loads `.env` from the framework directory, so a mounted `.env` is used automatically. For a full `docker run` example with env, tests, kubeconfig, and SSH forwarding:
 
 ```bash
 docker run -it --rm \
   -v $(pwd)/.env:/app/framework/.env:ro \
   -v /path/to/your/tests:/app/tests:ro \
-  -v ~/.kube:/home/appuser/.kube:ro \
+  -e SSH_AUTH_SOCK=/tmp/ssh-agent/socket \
+  -v $SSH_AUTH_SOCK:/tmp/ssh-agent/socket \
+  production-test-framework
+```
+
+Then run `make test` (or another target) inside the container. See [Makefile Targets](#makefile-targets) for all test targets.
+
+### 6. Running a single make target (RUN_MAKE_TARGET)
+
+If you set **`RUN_MAKE_TARGET`**, the entrypoint runs that make target and exits; no interactive shell or banner is shown. Use this for CI or one-off non-interactive runs:
+
+```bash
+docker run -it --rm \
+  -e RUN_MAKE_TARGET=test-run-only \
+  -v $(pwd)/.env:/app/framework/.env:ro \
+  -v /path/to/your/tests:/app/tests:ro \
   -e SSH_AUTH_SOCK=/tmp/ssh-agent/socket \
   -v $SSH_AUTH_SOCK:/tmp/ssh-agent/socket \
   production-test-framework
