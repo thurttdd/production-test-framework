@@ -75,7 +75,7 @@ EOF
 # Create the test results directory
 RUN mkdir -p /app/results
 
-CMD ["/app/framework/docker-entrypoint.sh"]
+CMD ["/app/framework/scripts/docker-entrypoint.sh"]
 
 ARG GIT_HASH=unknown
 LABEL org.opencontainers.image.revision="${GIT_HASH}"
