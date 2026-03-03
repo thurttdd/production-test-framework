@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: FSL-1.1-ALv2
-# Copyright (c) 2026 Delos Data, Inc.
+# Copyright (c) 2025 Delos Data, Inc.
 # Include the OTEL stack (Prometheus, Grafana, OTEL Collector)
 # MOSAIC_PATH should be path to the mosaic repo
 include:

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: FSL-1.1-ALv2
-# Copyright (c) 2026 Delos Data, Inc.
+# Copyright (c) 2025 Delos Data, Inc.
 FROM docker:29.1-cli
 RUN apk add --no-cache curl bash openssl make openssh build-base sudo shadow
 

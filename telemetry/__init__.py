@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: FSL-1.1-ALv2
-# Copyright (c) 2026 Delos Data, Inc.
+# Copyright (c) 2025 Delos Data, Inc.
 # Telemetry module for initializing and sending metrics to an OpenTelemetry collector
 #
 # Usage:
