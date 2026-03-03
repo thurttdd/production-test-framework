@@ -1,24 +1,28 @@
 #!/bin/sh
 # SPDX-License-Identifier: FSL-1.1-ALv2
 # Copyright (c) 2025 Delos Data, Inc.
+#
+# Example script to run the production-test-framework Docker image.
+# Copy to launch_framework.sh, edit the paths below, and run.
 
 # The docker image to use
 IMAGE=production-test-framework:latest
 
 # The directory where the pytest tests are located
-TESTS_DIR=../tests
+TESTS_DIR=/path/to/your/tests
 
-# The directory where the mosaic root is located
-HELM_CHARTS_DIR=$HOME/projects/mosaic/sw/epsw/charts
+# The directory where the mosaic helm charts are located
+HELM_CHARTS_DIR=/path/to/mosaic/helm/charts
 
 # The directory where the nccl profiler plugin is located
-NCCL_PROFILER_PLUGIN_DIR=$HOME/projects/mosaic/sw/epsw/nccl_profiler_plugin
+NCCL_PROFILER_PLUGIN_DIR=/path/to/mosaic/nccl_profiler_plugin
 
 # The environment file to use. This is used to set the environment variables for the framework.
-ENV_FILE=.env.docker
+ENV_FILE=/path/to/your/.env.docker
 
-# The DNS search domain. This command will parseout the local tailscale domain from the resolv.conf file,
-# but this can be replaced with a static search domain if needed.
+# The DNS search domain. This is currently used for tailscale DNS resolution, but can be replaced with 
+# a static value if needed. Parse the local tailscale domain from resolv.conf, or use a static value:
+# DNS_SEARCH=example.ts.net
 DNS_SEARCH=`sed -n '/^search/s/^search[[:space:]]*//p' /etc/resolv.conf | grep -owiE '[a-z0-9.]*ts.net'`
 
 # The name of the container to create
