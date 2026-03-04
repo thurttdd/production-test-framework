@@ -1,0 +1,38 @@
+# Environment and secrets
+.env
+.env.*
+# env.example is committed as the template
+
+# Ansible inventories (use example files; real inventories are local)
+ansible/inventory.ini
+ansible/inventory-single-node.ini
+
+# Docker build artifact (legacy; no longer used)
+.monorepo-files/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.uv/
+build/
+dist/
+*.egg-info/
+*.egg
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Test / runtime
+results/
+*.log
+.pytest_cache/
+.coverage
+htmlcov/

@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: FSL-1.1-ALv2
+# Copyright (c) 2025 Delos Data, Inc.
+apiVersion: v1
+kind: Service
+metadata:
+  name: alloy-service
+spec:
+  selector:
+    app.kubernetes.io/name: alloy
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 4317
+      targetPort: 4317
+      name: otlp-grpc
+    - protocol: TCP
+      port: 4318
+      targetPort: 4318
+      name: otlp-http
