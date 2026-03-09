@@ -20,10 +20,9 @@ NCCL_PROFILER_PLUGIN_DIR=/path/to/mosaic/nccl_profiler_plugin
 # The environment file to use. This is used to set the environment variables for the framework.
 ENV_FILE=/path/to/your/.env.docker
 
-# The DNS search domain. This is currently used for tailscale DNS resolution, but can be replaced with 
-# a static value if needed. Parse the local tailscale domain from resolv.conf, or use a static value:
-# DNS_SEARCH=example.ts.net
-DNS_SEARCH=`sed -n '/^search/s/^search[[:space:]]*//p' /etc/resolv.conf | grep -owiE '[a-z0-9.]*ts.net'`
+# The DNS search domain. Example:
+# DNS_SEARCH=example.mydomain.com
+DNS_SEARCH=example.mydomain.com
 
 # The name of the container to create
 CONTAINER_NAME=production-test-framework

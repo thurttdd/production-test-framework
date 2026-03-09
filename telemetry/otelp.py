@@ -12,7 +12,7 @@ Usage:
     from framework.telemetry import Otelp
 
     # Create and initialize
-    otelp = Otelp("espresso-1 :30317")
+    otelp = Otelp("otel_hostname :30317")
     otelp.initialize(
         service_name="my-service",
         service_version="1.0.0",
@@ -34,7 +34,7 @@ Usage:
     otelp.cleanup()
 
     # Or use context manager
-    with create_otelp("espresso-1 :30317", "my-service", "1.0.0", "user-123") as otelp:
+    with create_otelp("otel_hostname :30317", "my-service", "1.0.0", "user-123") as otelp:
         counter = otelp.create_counter("bytes_sent", "Total bytes sent")
         counter.add(1024)
 """
