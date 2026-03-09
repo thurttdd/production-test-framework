@@ -16,7 +16,7 @@ class LGTMConfig:
     """Configuration for LGTM stack deployment and testing."""
 
     # Target host configuration
-    host: str = field(default_factory=lambda: os.getenv("REMOTE_HOST", "espresso-1"))
+    host: str = field(default_factory=lambda: os.getenv("REMOTE_HOST", ""))
 
     # SSH/Ansible configuration
     ansible_remote_user: str = field(default_factory=lambda: os.getenv("ANSIBLE_REMOTE_USER", ""))
