@@ -12,7 +12,7 @@ Usage:
     from framework.telemetry import Otelp
 
     # Create and initialize
-    otelp = Otelp("otel_hostname :30317")
+    otelp = Otelp("otel_hostname:4317")
     otelp.initialize(
         service_name="my-service",
         service_version="1.0.0",
@@ -34,7 +34,7 @@ Usage:
     otelp.cleanup()
 
     # Or use context manager
-    with create_otelp("otel_hostname :30317", "my-service", "1.0.0", "user-123") as otelp:
+    with create_otelp("otel_hostname:4317", "my-service", "1.0.0", "user-123") as otelp:
         counter = otelp.create_counter("bytes_sent", "Total bytes sent")
         counter.add(1024)
 """
@@ -81,7 +81,7 @@ class Otelp:
     This is a base class that can be used directly for non-XPT telemetry.
 
     Attributes:
-        otel_collector_endpoint: The gRPC endpoint of the OTLP collector (e.g., "espresso-1 :30317")
+        otel_collector_endpoint: The gRPC endpoint of the OTLP collector (e.g., "localhost:4317")
         is_connected: Whether the OTLP collector is reachable
         config: Configuration for the telemetry service
     """
@@ -92,7 +92,7 @@ class Otelp:
 
         Args:
             otel_collector_endpoint: The gRPC endpoint of the OTLP collector.
-                                    Format: "host:port" (e.g., "espresso-1:30317")
+                                    Format: "host:port" (e.g., "localhost:4317")
         """
         if not otel_collector_endpoint:
             raise ValueError("otel_collector_endpoint cannot be empty")
@@ -595,7 +595,7 @@ def create_otelp(
     Context manager for creating and initializing an Otelp instance.
 
     Usage:
-        with create_otelp("espresso-1 :30317", "my-service", "1.0.0", "my-service-1", "user-123") as otelp:
+        with create_otelp("localhost:4317", "my-service", "1.0.0", "my-service-1", "user-123") as otelp:
             counter = otelp.create_counter("ingest_counter", "Ingest test tick counter")
             counter.add(1)
 

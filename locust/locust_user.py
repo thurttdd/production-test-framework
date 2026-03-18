@@ -72,7 +72,7 @@ class LocustMetricsUser(User):
     Example:
         class MyMetricsUser(LocustMetricsUser):
             config = OtelpMetricConfig(
-                otlp_endpoint="espresso-1:30317",
+                otlp_endpoint="localhost:4317",
                 service_name="my-service",
                 service_version="1.0.0",
                 metric_name="my_counter",
