@@ -64,7 +64,6 @@ RUN uv venv --clear && uv sync && uv cache clean
 
 # create a .env file in the framework directory
 RUN <<EOF
-echo "MOSAIC_ROOT=${MOSAIC_ROOT:-/app/mosaic}" > .env
 echo "ANSIBLE_HOME=${ANSIBLE_HOME:-/app/framework/ansible}" >> .env
 echo "ANSIBLE_INVENTORY_FILE=${ANSIBLE_INVENTORY_FILE:-/app/framework/ansible/inventory.ini}" >> .env
 echo "REMOTE_HOST=${REMOTE_HOST:-localhost}" >> .env

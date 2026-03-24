@@ -1,0 +1,12 @@
+[project]
+name = "unit-tests"
+version = "0.1.0"
+description = "Unit test suite"
+requires-python = ">=3.14"
+dependencies = []
+
+[tool.pytest.ini_options]
+testpaths = ["."]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+

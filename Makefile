@@ -12,9 +12,9 @@ endif
 
 # List of required prerequisites to check
 PREREQS = uv kubectl helm
-ENV_VARS = ANSIBLE_REMOTE_USER REMOTE_HOST CLUSTER ANSIBLE_INVENTORY_FILE MOSAIC_ROOT
+ENV_VARS = ANSIBLE_REMOTE_USER REMOTE_HOST CLUSTER ANSIBLE_INVENTORY_FILE
 FRAMEWORK_DIR := $(CURDIR)
-TESTS_DIR := $(shell cd $(FRAMEWORK_DIR)/../tests && pwd)
+TESTS_DIR := $(shell cd $(FRAMEWORK_DIR)/tests && pwd)
 
 # Git and Qase (Qase uses QASE_TESTOPS_RUN_TITLE env var for run title; default overridable by CI/user)
 GIT_COMMIT_HASH ?= (unknown commit hash)
@@ -43,7 +43,7 @@ TASK := ⏹
 
 # Default test arguments
 PYTEST_ARGS ?=
-TEST_MARKER ?= "k3s or lgtm"
+TEST_MARKER ?= "k3s or lgtm or metrics"
 
 help:
 	@echo ""
@@ -164,14 +164,14 @@ copy-kubeconfig-local: prereqs setup-kubeconfig
 deploy-helm-charts: prereqs start-ssh-tunnel
 	@echo "$(TASK) Deploying Helm charts on cluster $(CLUSTER)..."
 	@echo "KUBECONFIG: $(KUBECONFIG)"
-	cd $(MOSAIC_ROOT)/sw/epsw/charts/mosaic && \
+	cd /app/charts/mosaic && \
 	helm --kubeconfig=$(KUBECONFIG) dep update && \
 	helm --kubeconfig=$(KUBECONFIG) --create-namespace --namespace=mosaic --wait --timeout=10m upgrade --install mosaic .
 
 undeploy-helm-charts: prereqs start-ssh-tunnel
 	@echo "$(TASK) Removing Helm charts from cluster $(CLUSTER)..."
 	@echo "KUBECONFIG: $(KUBECONFIG)"
-	@cd $(MOSAIC_ROOT)/sw/epsw/charts/mosaic
+	@cd /app/charts/mosaic
 	@kubectl --kubeconfig=$(KUBECONFIG) delete ns mosaic
 	@echo "$(TASK) Helm charts removed from cluster $(CLUSTER)"
 
