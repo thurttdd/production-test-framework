@@ -53,8 +53,6 @@ For Qase test reporting, set **`QASE_TESTOPS_API_TOKEN`** (optional). If unset, 
 
 You can also create a `.env` file in the project root with the variables above specified. Copy `env.example` to `.env` and edit the values. The `.env` file will be loaded when make is run.
 
-**Optional / advanced:** `MOSAIC_ROOT` is used by `deploy-helm-charts` and `undeploy-helm-charts` to locate Helm charts (e.g. `$(MOSAIC_ROOT)/sw/epsw/charts/mosaic`). Set it if you use those targets with a compatible chart layout. `TESTS_DIR` defaults to `../tests` (sibling of the framework directory); set it if your tests live elsewhere.
-
 ## Quick Start
 
 ### 1. Clone and set up
@@ -161,7 +159,7 @@ make test QASE_TESTOPS_RUN_TITLE="CI run 123"
 
 ## Test Structure
 
-By default, tests are expected in `../tests/lgtm/` (a sibling directory). Set `TESTS_DIR` if your tests live elsewhere. Tests are organized by validation area:
+By default, tests are expected in `./tests/lgtm/` (a child directory). Set `TESTS_DIR` if your tests live elsewhere. Tests are organized by validation area:
 
 - **`test_k3s_cluster.py`** - K3s cluster health and node validation
 - **`test_namespaces.py`** - Namespace and pod validation
@@ -198,7 +196,7 @@ The sections below describe how to set environment variables, enable SSH agent f
 
 ### 2. Environment variables for the container
 
-The container uses the same environment variables as the non-Docker setup: **`ANSIBLE_REMOTE_USER`**, **`REMOTE_HOST`**, **`CLUSTER`**, and **`ANSIBLE_INVENTORY_FILE`** are required. Optional variables include **`MOSAIC_ROOT`**, **`TESTS_DIR`**, and **`QASE_TESTOPS_API_TOKEN`** (see [Required Environment Variables](#required-environment-variables) above).
+The required environment variables for cluster validation are: **`ANSIBLE_REMOTE_USER`**, **`REMOTE_HOST`**, **`CLUSTER`**, and **`ANSIBLE_INVENTORY_FILE`**. Optional variables include **`TESTS_DIR`**, and **`QASE_TESTOPS_API_TOKEN`** (see [Required Environment Variables](#required-environment-variables) above).
 
 You can provide them by:
 
@@ -218,10 +216,10 @@ Ansible inside the container needs to reach your target hosts via SSH. Use SSH a
 
 If SSH connections fail, see [SSH Connection Issues](#ssh-connection-issues) in Troubleshooting.
 
-### 4. Mounting test files and mosaic root
+### 4. Mounting test files and mosaic helm charts
 
-- **Tests:** The framework expects tests at **`TESTS_DIR`**. Inside the container the default is `../tests` (i.e. **`/app/tests`** when the working directory is `/app/framework`). Mount your host tests directory there, e.g. `-v /path/to/your/tests:/app/tests:ro`. Tests are implemented in Python and run with pytest.
-- **Mosaic root:** For **`deploy-helm-charts`** and **`undeploy-helm-charts`**, set **`MOSAIC_ROOT`** and mount the mosaic tree so the expected path exists (e.g. `$(MOSAIC_ROOT)/sw/epsw/charts/mosaic`). For example, mount the host mosaic root at `/app/mosaic` and set `MOSAIC_ROOT=/app/mosaic`: `-v /path/to/mosaic:/app/mosaic:ro`.
+- **Tests:** The framework expects tests at **`TESTS_DIR`**. Inside the container the default is `./tests` (i.e. **`/app/framework/tests`** when the working directory is `/app/framework`). Mount your host tests directory there, e.g. `-v /path/to/your/tests:/app/framework/tests:ro`. Tests are implemented in Python and run with pytest.
+- **Helm charts:** The framework expects the mosaic helm charts to be at `/app/charts/mosaic`. Mount the location of the mosaic helm charts to use **`deploy-helm-charts`** and **`undeploy-helm-charts`**. For example, run the container with `: `-v /path/to/mosaic/charts:/app/charts/mosaic:ro`.
 
 A full example that combines `.env`, tests, mosaic, and SSH agent forwarding is shown in the code block in the next section; see also [scripts/launch_framework.sh](scripts/launch_framework.sh).
 
@@ -235,12 +233,13 @@ make test-run-only
 make test-deploy-only
 ```
 
-The Makefile loads `.env` from the framework directory, so a mounted `.env` is used automatically. For a full `docker run` example with env, tests, kubeconfig, and SSH forwarding:
+The Makefile loads `.env` from the framework directory, so a mounted `.env` is used automatically. For a full `docker run` example with env, tests, helm charts, kubeconfig, and SSH forwarding:
 
 ```bash
 docker run -it --rm \
   -v $(pwd)/.env:/app/framework/.env:ro \
-  -v /path/to/your/tests:/app/tests:ro \
+  -v /path/to/your/tests:/app/framework/tests:ro \
+  -v /path/to/mosaic/charts:/app/charts/mosaic:ro \
   -e SSH_AUTH_SOCK=/tmp/ssh-agent/socket \
   -v $SSH_AUTH_SOCK:/tmp/ssh-agent/socket \
   production-test-framework
@@ -256,7 +255,8 @@ If you set **`RUN_MAKE_TARGET`**, the entrypoint runs that make target and exits
 docker run -it --rm \
   -e RUN_MAKE_TARGET=test-run-only \
   -v $(pwd)/.env:/app/framework/.env:ro \
-  -v /path/to/your/tests:/app/tests:ro \
+  -v /path/to/your/tests:/app/framework/tests:ro \
+  -v /path/to/mosaic/charts:/app/charts/mosaic:ro \
   -e SSH_AUTH_SOCK=/tmp/ssh-agent/socket \
   -v $SSH_AUTH_SOCK:/tmp/ssh-agent/socket \
   production-test-framework
