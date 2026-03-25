@@ -2,10 +2,7 @@
 # Copyright (c) 2025 Delos Data, Inc.
 
 """
-Locust load testing utilities.
-
-Locust is a load testing tool that allows testing the performance
-of an application under load.
+Load testing utilities for testing the performance of an application under load.
 """
 
 from .locust_user import (
