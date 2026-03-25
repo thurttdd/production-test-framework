@@ -196,7 +196,7 @@ The sections below describe how to set environment variables, enable SSH agent f
 
 ### 2. Environment variables for the container
 
-The required environment variables for cluster validation are: **`ANSIBLE_REMOTE_USER`**, **`REMOTE_HOST`**, **`CLUSTER`**, and **`ANSIBLE_INVENTORY_FILE`** are required. Optional variables include **`TESTS_DIR`**, and **`QASE_TESTOPS_API_TOKEN`** (see [Required Environment Variables](#required-environment-variables) above).
+The required environment variables for cluster validation are: **`ANSIBLE_REMOTE_USER`**, **`REMOTE_HOST`**, **`CLUSTER`**, and **`ANSIBLE_INVENTORY_FILE`**. Optional variables include **`TESTS_DIR`**, and **`QASE_TESTOPS_API_TOKEN`** (see [Required Environment Variables](#required-environment-variables) above).
 
 You can provide them by:
 
