@@ -225,7 +225,7 @@ profiler-otel-test-only: run-otel-test
 # Single test run (one marker). QASE_TESTOPS_RUN_TITLE is exported above.
 run-tests: prereqs
 	@echo "$(TASK) Running tests with marker: $(TEST_MARKER)..."
-	@cd $(TESTS_DIR) && uv run pytest -m $(TEST_MARKER) -v $(PYTEST_ARGS) ./badpath; \
+	@cd $(TESTS_DIR) && uv run pytest -m $(TEST_MARKER) -v $(PYTEST_ARGS) .; \
 	exit $$?;
 
 
