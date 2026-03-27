@@ -8,10 +8,27 @@ from unittest.mock import patch, MagicMock
 
 from production_test_framework.helper import (
     check_tcp_connectivity,
+    is_localhost,
     wait_for_tcp_connectivity,
     get_mimir_base_url,
     query_mimir,
 )
+
+
+class TestIsLocalhost:
+    """Tests for is_localhost."""
+
+    def test_localhost_variants(self):
+        assert is_localhost("localhost") is True
+        assert is_localhost("LOCALHOST") is True
+        assert is_localhost("127.0.0.1") is True
+        assert is_localhost("::1") is True
+        assert is_localhost("0:0:0:0:0:0:0:1") is True
+
+    def test_not_localhost(self):
+        assert is_localhost("") is False
+        assert is_localhost("test-host.example.com") is False
+        assert is_localhost("10.0.0.1") is False
 
 
 class TestCheckTcpConnectivity:
