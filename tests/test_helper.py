@@ -9,10 +9,39 @@ from unittest.mock import patch, MagicMock
 from production_test_framework.helper import (
     check_tcp_connectivity,
     is_localhost,
+    run_command,
     wait_for_tcp_connectivity,
     get_mimir_base_url,
     query_mimir,
 )
+
+
+class TestRunCommand:
+    """Tests for run_command."""
+
+    @patch("production_test_framework.helper.subprocess.run")
+    def test_success(self, mock_run):
+        mock_run.return_value = MagicMock(returncode=0, stdout=" out \n", stderr="")
+        r = run_command(["/bin/echo", "hi"], timeout=5)
+        assert r.success
+        assert r.stdout == "out"
+        mock_run.assert_called_once()
+
+    @patch("production_test_framework.helper.subprocess.run")
+    def test_timeout(self, mock_run):
+        import subprocess as sp
+
+        mock_run.side_effect = sp.TimeoutExpired(cmd=["x"], timeout=1)
+        r = run_command(["sleep", "9"], timeout=1)
+        assert r.returncode == -1
+        assert "timed out" in r.stderr
+
+    @patch("production_test_framework.helper.subprocess.run")
+    def test_executable_not_found(self, mock_run):
+        mock_run.side_effect = FileNotFoundError(2, "No such file")
+        r = run_command(["nonexistent-binary-xyz"], timeout=5)
+        assert r.returncode == -1
+        assert "nonexistent-binary-xyz" in r.stderr
 
 
 class TestIsLocalhost:

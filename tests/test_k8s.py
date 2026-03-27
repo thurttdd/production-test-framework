@@ -273,7 +273,7 @@ class TestKubernetesClientLocalhost:
 
     def test_localhost_uses_subprocess_not_ssh(self, localhost_config, mock_ssh):
         client = KubernetesClient(localhost_config, ssh=mock_ssh)
-        with patch("production_test_framework.k8s.subprocess.run") as mock_run:
+        with patch("production_test_framework.helper.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,
                 stdout="node1   Ready   control-plane   1.28   192.168.1.1\n",
@@ -292,7 +292,7 @@ class TestKubernetesClientLocalhost:
     def test_127_0_0_1_uses_subprocess(self, mock_ssh):
         cfg = LGTMConfig(host="127.0.0.1", ansible_remote_user="u")
         client = KubernetesClient(cfg, ssh=mock_ssh)
-        with patch("production_test_framework.k8s.subprocess.run") as mock_run:
+        with patch("production_test_framework.helper.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
             client.get_namespaces()
             mock_ssh.run_kubectl.assert_not_called()
