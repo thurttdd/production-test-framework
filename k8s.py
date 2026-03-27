@@ -8,6 +8,7 @@ Provides high-level interfaces for interacting with Kubernetes clusters,
 with support for both local kubectl and remote k3s kubectl via SSH.
 """
 
+import shlex
 import subprocess
 import threading
 import time
@@ -17,6 +18,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 from .config import LGTMConfig
+from .helper import is_localhost
 from .ssh import SSHExecutor, CommandResult
 
 
@@ -67,15 +69,55 @@ class KubernetesClient:
     """
     High-level Kubernetes client.
 
-    Executes kubectl commands on a remote k3s host via SSH and parses results.
+    Executes kubectl on the local machine when host is localhost.
+    Otherwise executes kubectl on the remote host via SSH.
     """
 
     def __init__(self, config: LGTMConfig, ssh: Optional[SSHExecutor] = None):
         self.config = config
         self.ssh = ssh or SSHExecutor(config)
 
+    def _run_kubectl_local(
+        self,
+        args: str,
+        timeout: int = 60,
+        kubeconfig: str = "~/.kube/config",
+        stdin_data: Optional[str] = None,
+    ) -> CommandResult:
+        """Run kubectl on the local machine."""
+        kube_path = str(Path(kubeconfig).expanduser())
+        try:
+            cmd = ["kubectl", "--kubeconfig", kube_path] + shlex.split(args)
+        except ValueError as e:
+            return CommandResult(returncode=-1, stdout="", stderr=f"Invalid kubectl args: {e}")
+        try:
+            proc = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                input=stdin_data,
+            )
+            return CommandResult(
+                returncode=proc.returncode,
+                stdout=(proc.stdout or "").strip(),
+                stderr=(proc.stderr or "").strip(),
+            )
+        except subprocess.TimeoutExpired:
+            return CommandResult(
+                returncode=-1,
+                stdout="",
+                stderr=f"Command timed out after {timeout}s",
+            )
+        except FileNotFoundError:
+            return CommandResult(returncode=-1, stdout="", stderr="kubectl not found in PATH")
+        except Exception as e:
+            return CommandResult(returncode=-1, stdout="", stderr=str(e))
+
     def _run_kubectl(self, args: str, timeout: int = 60, stdin_data: Optional[str] = None) -> CommandResult:
-        """Execute kubectl command on remote host."""
+        """Execute kubectl on localhost or on the remote host via SSH."""
+        if is_localhost(self.config.host):
+            return self._run_kubectl_local(args, timeout=timeout, stdin_data=stdin_data)
         return self.ssh.run_kubectl(args, timeout=timeout, stdin_data=stdin_data)
 
     # -------------------------------------------------------------------------

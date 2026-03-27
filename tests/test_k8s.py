@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from production_test_framework.config import LGTMConfig
 from production_test_framework.k8s import (
     Node,
     Pod,
@@ -255,6 +256,47 @@ class TestKubernetesClient:
         assert result is True
         mock_ssh.run_kubectl.assert_called_once()
         assert mock_ssh.run_kubectl.call_args[1]["stdin_data"] == "apiVersion: v1\nkind: ConfigMap\n"
+
+
+class TestKubernetesClientLocalhost:
+    """KubernetesClient uses local kubectl when host is loopback."""
+
+    @pytest.fixture
+    def mock_ssh(self):
+        ssh = MagicMock()
+        ssh.run_kubectl = MagicMock()
+        return ssh
+
+    @pytest.fixture
+    def localhost_config(self):
+        return LGTMConfig(host="localhost", ansible_remote_user="u")
+
+    def test_localhost_uses_subprocess_not_ssh(self, localhost_config, mock_ssh):
+        client = KubernetesClient(localhost_config, ssh=mock_ssh)
+        with patch("production_test_framework.k8s.subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout="node1   Ready   control-plane   1.28   192.168.1.1\n",
+                stderr="",
+            )
+            nodes, result = client.get_nodes()
+            assert result.success is True
+            assert len(nodes) == 1
+            mock_ssh.run_kubectl.assert_not_called()
+            mock_run.assert_called_once()
+            cmd = mock_run.call_args[0][0]
+            assert cmd[0] == "kubectl"
+            assert cmd[1] == "--kubeconfig"
+            assert "get nodes -o wide --no-headers" in " ".join(cmd)
+
+    def test_127_0_0_1_uses_subprocess(self, mock_ssh):
+        cfg = LGTMConfig(host="127.0.0.1", ansible_remote_user="u")
+        client = KubernetesClient(cfg, ssh=mock_ssh)
+        with patch("production_test_framework.k8s.subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            client.get_namespaces()
+            mock_ssh.run_kubectl.assert_not_called()
+            mock_run.assert_called_once()
 
 
 class TestLocalKubectlPortForwarder:

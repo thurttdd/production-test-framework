@@ -12,6 +12,19 @@ import time
 import requests
 
 
+def is_localhost(host: str) -> bool:
+    """True when host refers to this machine (e.g. loopback), for local vs remote behavior."""
+    if not host or not str(host).strip():
+        return False
+    h = str(host).strip().lower()
+    return h in (
+        "localhost",
+        "127.0.0.1",
+        "::1",
+        "0:0:0:0:0:0:0:1",
+    )
+
+
 def check_tcp_connectivity(host: str, port: int, timeout: float = 5.0) -> bool:
     """
     Test TCP connectivity to a host:port.

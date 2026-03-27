@@ -17,6 +17,8 @@ RUN addgroup -g $USER_GID $USERNAME \
     && mkdir -p $HOME && chown -R $USERNAME:$USERNAME $HOME \
     && mkdir -p /app/framework && chown -R $USERNAME:$USERNAME /app
 
+# Add the non-root user to the docker group
+RUN usermod -aG docker $USERNAME
 
 WORKDIR /app
 
