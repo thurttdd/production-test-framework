@@ -8,8 +8,13 @@ Provides reusable utilities for testing.
 """
 
 import socket
+import subprocess
 import time
+from typing import List, Optional
+
 import requests
+
+from .ssh import CommandResult
 
 
 def is_localhost(host: str) -> bool:
@@ -23,6 +28,51 @@ def is_localhost(host: str) -> bool:
         "::1",
         "0:0:0:0:0:0:0:1",
     )
+
+
+def run_command(
+    cmd: List[str],
+    timeout: int = 60,
+    stdin_data: Optional[str] = None,
+) -> CommandResult:
+    """
+    Run a command locally via subprocess.
+
+    Args:
+        cmd: Executable path or name as first element, then arguments (no shell).
+        timeout: Seconds before the process is killed.
+        stdin_data: Optional string written to stdin.
+
+    Returns:
+        CommandResult.
+    """
+    try:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            input=stdin_data,
+        )
+        return CommandResult(
+            returncode=proc.returncode,
+            stdout=(proc.stdout or "").strip(),
+            stderr=(proc.stderr or "").strip(),
+        )
+    except subprocess.TimeoutExpired:
+        return CommandResult(
+            returncode=-1,
+            stdout="",
+            stderr=f"Command timed out after {timeout}s",
+        )
+    except FileNotFoundError:
+        return CommandResult(
+            returncode=-1,
+            stdout="",
+            stderr=f"{cmd[0]} not found in PATH",
+        )
+    except Exception as e:
+        return CommandResult(returncode=-1, stdout="", stderr=str(e))
 
 
 def check_tcp_connectivity(host: str, port: int, timeout: float = 5.0) -> bool:

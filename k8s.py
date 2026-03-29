@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 from .config import LGTMConfig
-from .helper import is_localhost
+from .helper import is_localhost, run_command
 from .ssh import SSHExecutor, CommandResult
 
 
@@ -90,29 +90,7 @@ class KubernetesClient:
             cmd = ["kubectl", "--kubeconfig", kube_path] + shlex.split(args)
         except ValueError as e:
             return CommandResult(returncode=-1, stdout="", stderr=f"Invalid kubectl args: {e}")
-        try:
-            proc = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                input=stdin_data,
-            )
-            return CommandResult(
-                returncode=proc.returncode,
-                stdout=(proc.stdout or "").strip(),
-                stderr=(proc.stderr or "").strip(),
-            )
-        except subprocess.TimeoutExpired:
-            return CommandResult(
-                returncode=-1,
-                stdout="",
-                stderr=f"Command timed out after {timeout}s",
-            )
-        except FileNotFoundError:
-            return CommandResult(returncode=-1, stdout="", stderr="kubectl not found in PATH")
-        except Exception as e:
-            return CommandResult(returncode=-1, stdout="", stderr=str(e))
+        return run_command(cmd, timeout=timeout, stdin_data=stdin_data)
 
     def _run_kubectl(self, args: str, timeout: int = 60, stdin_data: Optional[str] = None) -> CommandResult:
         """Execute kubectl on localhost or on the remote host via SSH."""
