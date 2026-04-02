@@ -22,4 +22,4 @@ jobs:
         uses: astral-sh/setup-uv@v4
 
       - name: Run unit tests
-        run: uv sync && uv run pytest tests -v
+        run: uv sync --all-packages && uv run pytest tests -v
