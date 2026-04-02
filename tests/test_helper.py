@@ -4,15 +4,17 @@
 """Unit tests for helper module."""
 
 import socket
-from unittest.mock import patch, MagicMock
+import threading
+import time
+from unittest.mock import MagicMock, patch
 
 from production_test_framework.helper import (
     check_tcp_connectivity,
-    is_localhost,
-    run_command,
-    wait_for_tcp_connectivity,
-    get_mimir_base_url,
+    get_mimir_base_url, is_localhost,
     query_mimir,
+    run_cancellable_command,
+    run_command,
+    wait_for_tcp_connectivity
 )
 
 
@@ -42,6 +44,64 @@ class TestRunCommand:
         r = run_command(["nonexistent-binary-xyz"], timeout=5)
         assert r.returncode == -1
         assert "nonexistent-binary-xyz" in r.stderr
+
+
+class TestRunCancellableCommand:
+    """Tests for run_cancellable_command."""
+
+    def test_success_real_process(self):
+        cancel = threading.Event()
+        r = run_cancellable_command(
+            ["/bin/sh", "-c", "echo ok"],
+            timeout=10.0,
+            cancel_event=cancel,
+            poll_interval=0.2,
+        )
+        assert r.success
+        assert r.stdout == "ok"
+
+    def test_nonzero_exit(self):
+        cancel = threading.Event()
+        r = run_cancellable_command(
+            ["/bin/sh", "-c", "exit 7"],
+            timeout=10.0,
+            cancel_event=cancel,
+            poll_interval=0.2,
+        )
+        assert r.returncode == 7
+        assert not r.success
+
+    def test_cancel_terminates_child(self):
+        cancel = threading.Event()
+        out = {}
+
+        def run():
+            out["r"] = run_cancellable_command(
+                ["sleep", "30"],
+                timeout=60.0,
+                cancel_event=cancel,
+                poll_interval=0.1,
+            )
+
+        t = threading.Thread(target=run)
+        t.start()
+        time.sleep(0.25)
+        cancel.set()
+        t.join(timeout=10.0)
+        assert "r" in out
+        assert out["r"].returncode == -1
+        assert "cancelled" in out["r"].stderr.lower()
+
+    def test_wall_clock_timeout(self):
+        cancel = threading.Event()
+        r = run_cancellable_command(
+            ["sleep", "60"],
+            timeout=0.4,
+            cancel_event=cancel,
+            poll_interval=0.1,
+        )
+        assert r.returncode == -1
+        assert "timed out" in r.stderr.lower()
 
 
 class TestIsLocalhost:

@@ -9,6 +9,7 @@ Provides reusable utilities for testing.
 
 import socket
 import subprocess
+import threading
 import time
 from typing import List, Optional
 
@@ -73,6 +74,98 @@ def run_command(
         )
     except Exception as e:
         return CommandResult(returncode=-1, stdout="", stderr=str(e))
+
+
+def run_cancellable_command(
+    cmd: List[str],
+    *,
+    timeout: float,
+    cancel_event: threading.Event,
+    poll_interval: float = 0.5,
+    stdin_data: Optional[str] = None,
+    text: bool = True,
+) -> CommandResult:
+    """
+    Run a command via Popen; return when the process exits, *timeout* is reached,
+    or *cancel_event* is set (child is terminated).
+
+    Args:
+        cmd: argv list (no shell).
+        timeout: Maximum wall-clock seconds for the run.
+        cancel_event: When set from another thread, the child process is terminated.
+        poll_interval: How often to wait/check between cancel and completion checks.
+        stdin_data: Optional string written to stdin.
+        text: Decode stdout/stderr as text.
+
+    Returns:
+        CommandResult; returncode -1 for timeout, cancel, or internal errors.
+    """
+    deadline = time.monotonic() + timeout
+    pending_input: Optional[str] = stdin_data
+
+    def _finish_terminated(proc: subprocess.Popen, message: str) -> CommandResult:
+        if proc.poll() is None:
+            proc.terminate()
+        try:
+            out, err = proc.communicate(timeout=30)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            out, err = proc.communicate()
+        except Exception as e:
+            return CommandResult(
+                returncode=-1,
+                stdout="",
+                stderr=f"{message}: {e}",
+            )
+        stdout = (out or "").strip()
+        stderr = (err or "").strip()
+        if stderr and message:
+            stderr = f"{message}\n{stderr}".strip()
+        elif message:
+            stderr = message
+        return CommandResult(returncode=-1, stdout=stdout, stderr=stderr)
+
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            stdin=subprocess.PIPE if stdin_data is not None else subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=text,
+        )
+    except FileNotFoundError:
+        return CommandResult(
+            returncode=-1,
+            stdout="",
+            stderr=f"{cmd[0]} not found in PATH",
+        )
+    except Exception as e:
+        return CommandResult(returncode=-1, stdout="", stderr=str(e))
+
+    while True:
+        if cancel_event.is_set():
+            return _finish_terminated(proc, "Command cancelled")
+
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return _finish_terminated(proc, f"Command timed out after {timeout}s")
+
+        try:
+            out, err = proc.communicate(
+                input=pending_input,
+                timeout=min(poll_interval, max(remaining, 0.01)),
+            )
+            pending_input = None
+            return CommandResult(
+                returncode=proc.returncode if proc.returncode is not None else -1,
+                stdout=(out or "").strip(),
+                stderr=(err or "").strip(),
+            )
+        except subprocess.TimeoutExpired:
+            pending_input = None
+            continue
+        except Exception as e:
+            return CommandResult(returncode=-1, stdout="", stderr=str(e))
 
 
 def check_tcp_connectivity(host: str, port: int, timeout: float = 5.0) -> bool:
