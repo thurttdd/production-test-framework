@@ -26,7 +26,6 @@ class PromptWorkload(Workload):
     ):
         super().__init__()
         self.logger = logging.getLogger(__name__)
-        self._lock = threading.Lock()
         self.prompt = prompt
         self.backend = None
         self._completion_fut: Future | None = None
@@ -39,45 +38,38 @@ class PromptWorkload(Workload):
 
     @property
     def status(self) -> WorkloadStatus:
-        with self._lock:
-            return self.prompt_state
+        return self.prompt_state
 
     def start(self):
         """Start the prompt workload"""
+
+        # We currently only support one prompt workload at a time.
+        if self.status == WorkloadStatus.RUNNING:
+            raise RuntimeError("Prompt workload already running")
 
         self.logger.info("Starting prompt workload: %s", self.prompt)
         self.logger.info("waiting for backend to be ready...")
         self.backend.wait_for_ready(timeout=30)
 
         self.logger.info("sending prompt to backend...")
-        with self._lock:
-            self._start_time = time.time()
-            self.prompt_state = WorkloadStatus.RUNNING
-            self.prompt_result = None
-        fut = self.submit_background(self.backend.complete, self.prompt)
-        fut.add_done_callback(self._on_completion_done)
-        with self._lock:
-            self._completion_fut = fut
+        self._start_time = time.time()
+        self.prompt_state = WorkloadStatus.RUNNING
+        self.prompt_result = None      
+        self._completion_fut = self.submit_background(self.backend.complete, self.prompt)
+        self._completion_fut.add_done_callback(self._on_completion_done)
 
     def stop(self):
         """Stop the prompt workload"""
         self.logger.info("Stopping prompt workload...")
-        with self._lock:
-            fut = self._completion_fut
-        if fut is not None:
-            fut.cancel()
-        with self._lock:
-            self.prompt_state = WorkloadStatus.STOPPED
-            self.prompt_result = None
-            self._completion_fut = None
+        self._completion_fut.cancel()
+        self.prompt_state = WorkloadStatus.STOPPED
+        self.prompt_result = None
+        self._completion_fut = None
         self.logger.info("Prompt workload stopped")
 
     def get_result(self) -> str:
-        """Return inference text after the prompt task has completed."""
-        with self._lock:
-            result = self.prompt_result
-        
-        return WorkloadResult(start_time=self._start_time, end_time=self._end_time, result=result, status=self.status)
+        """Return inference text after the prompt task has completed."""        
+        return WorkloadResult(start_time=self._start_time, end_time=self._end_time, result=self.prompt_result, status=self.status)
 
     def _on_completion_done(self, fut: Future) -> None:
         try:
@@ -87,12 +79,10 @@ class PromptWorkload(Workload):
             return
         except Exception:
             self.logger.exception("Prompt workload failed")
-            with self._lock:
-                self.prompt_state = WorkloadStatus.ERROR
+            self.prompt_state = WorkloadStatus.ERROR
             return
         finally:
             self._end_time = time.time()
-        with self._lock:
             self.prompt_result = result
             self.prompt_state = WorkloadStatus.COMPLETED
         self.logger.info("Prompt workload completed: %s", self.prompt_result)

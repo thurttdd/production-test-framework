@@ -14,7 +14,7 @@ from .workload import Workload, WorkloadResult, WorkloadStatus
 
 
 class BenchmarkCancelled(Exception):
-    """The benchmark run was terminated via :meth:`InferencexWorkload.stop`."""
+    """The benchmark run was terminated via ``InferencexWorkload.stop()``."""
 
 
 class InferencexWorkload(Workload):
@@ -45,7 +45,6 @@ class InferencexWorkload(Workload):
     ):
         super().__init__()
         self.logger = logging.getLogger(__name__)
-        self._lock = threading.Lock()
         self._result = ""
         self._completion_fut: Future | None = None
         self._cancel_event = threading.Event()
@@ -89,16 +88,21 @@ class InferencexWorkload(Workload):
         self._logger.info("Running: %s", " ".join(cmd))
 
     def start(self):
+        """Start the inferencex workload"""
+
+        # We currently only support one inferencex workload at a time.
+        if self.status == WorkloadStatus.RUNNING:
+            raise RuntimeError("Inferencex workload already running")
+
         self.logger.info("Starting inferencex workload")
         self._cancel_event.clear()
-        with self._lock:
-            self._start_time = time.time()
-            self._workload_status = WorkloadStatus.RUNNING
-            self._result = ""
-        fut = self.submit_background(self._run_benchmark_sync)
-        fut.add_done_callback(self._on_benchmark_done)
-        with self._lock:
-            self._completion_fut = fut
+        self._start_time = time.time()
+        self._workload_status = WorkloadStatus.RUNNING
+        self._result = ""
+
+        self._completion_fut = self.submit_background(self._run_benchmark_sync)
+        self._completion_fut.add_done_callback(self._on_benchmark_done)
+
 
     def _run_benchmark_sync(self) -> str:
         cmd = self._docker_exec_cmd()
@@ -120,39 +124,31 @@ class InferencexWorkload(Workload):
             result = fut.result()
         except BenchmarkCancelled:
             self.logger.info("Inferencex benchmark stopped")
-            with self._lock:
-                self._workload_status = WorkloadStatus.STOPPED
-                self._result = ""
+            self._workload_status = WorkloadStatus.STOPPED
+            self._result = ""
             return
         except CancelledError:
             self.logger.info("Inferencex workload cancelled")
-            with self._lock:
-                self._workload_status = WorkloadStatus.STOPPED
+            self._workload_status = WorkloadStatus.STOPPED
             return
         except Exception as e:
             self.logger.exception("Inferencex benchmark failed")
-            with self._lock:
-                self._workload_status = WorkloadStatus.ERROR
-                self._result = str(e)
+            self._workload_status = WorkloadStatus.ERROR
+            self._result = str(e)
             return
         finally:
             self._end_time = time.time()
-        with self._lock:
-            self._result = result
-            self._workload_status = WorkloadStatus.COMPLETED
+
+        self._result = result
+        self._workload_status = WorkloadStatus.COMPLETED
 
     def stop(self):
         self.logger.info("Stopping inferencex workload")
         self._cancel_event.set()
-        with self._lock:
-            fut = self._completion_fut
-        if fut is not None:
-            fut.cancel()
-        with self._lock:
-            self._workload_status = WorkloadStatus.STOPPED
-            self._completion_fut = None
+        if self._completion_fut is not None:
+            self._completion_fut.cancel()
+        self._workload_status = WorkloadStatus.STOPPED
+        self._completion_fut = None
 
     def get_result(self) -> WorkloadResult:
-        with self._lock:
-            result = self._result
-        return WorkloadResult(start_time=self._start_time, end_time=self._end_time, result=result, status=self.status)
+        return WorkloadResult(start_time=self._start_time, end_time=self._end_time, result=self._result, status=self.status)

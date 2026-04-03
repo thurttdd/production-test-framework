@@ -3,6 +3,7 @@
 
 """Unit tests for workload base and concrete workload classes."""
 
+import threading
 import time
 from unittest.mock import MagicMock, patch
 
@@ -231,6 +232,26 @@ class TestInferencexWorkload:
         assert w.get_result().runtime is not None
         w.shutdown_executor(wait=True)
 
+    def test_second_start_raises_when_already_running(self, mock_inferencex_run):
+        block = threading.Event()
+
+        def slow_run(*_args, **_kwargs):
+            block.wait(timeout=60.0)
+            return CommandResult(returncode=0, stdout="done", stderr="")
+
+        mock_inferencex_run.side_effect = slow_run
+        w = InferencexWorkload()
+        w.start()
+        assert w.status == WorkloadStatus.RUNNING
+        with pytest.raises(
+            RuntimeError,
+            match="Inferencex workload already running",
+        ):
+            w.start()
+        block.set()
+        w._completion_fut.result(timeout=10.0)
+        w.shutdown_executor(wait=True)
+
 
 class TestPromptWorkload:
     """Tests for prompt-driven workload against a backend."""
@@ -305,4 +326,25 @@ class TestPromptWorkload:
         assert wl.get_result().start_time is not None
         assert wl.get_result().end_time is not None
         assert wl.get_result().runtime is not None
+        wl.shutdown_executor(wait=True)
+
+    def test_second_start_raises_when_already_running(self, mock_vllm_client_class):
+        _mock_cls, backend = mock_vllm_client_class
+        block = threading.Event()
+
+        def blocking_complete(_prompt):
+            block.wait(timeout=60.0)
+            return InferenceResult(success=True, text="ok")
+
+        backend.complete = MagicMock(side_effect=blocking_complete)
+        wl = PromptWorkload("x")
+        wl.start()
+        assert wl.status == WorkloadStatus.RUNNING
+        with pytest.raises(
+            RuntimeError,
+            match="Prompt workload already running",
+        ):
+            wl.start()
+        block.set()
+        wl._completion_fut.result(timeout=10.0)
         wl.shutdown_executor(wait=True)
