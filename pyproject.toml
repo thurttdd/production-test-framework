@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: FSL-1.1-ALv2
+# Copyright (c) 2025 Delos Data, Inc.
+
 [project]
 name = "production-test-framework"
 version = "0.1.0"
@@ -24,6 +27,11 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+cache_dir = "/app/framework/.pytest_cache"
+#log_cli = "true"
+#log_cli_level = "INFO"
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]

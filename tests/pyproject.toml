@@ -1,11 +1,17 @@
+# SPDX-License-Identifier: FSL-1.1-ALv2
+# Copyright (c) 2025 Delos Data, Inc.
+
 [project]
 name = "unit-tests"
 version = "0.1.0"
 description = "Unit test suite"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "pytest-spec>=6.0.0",
+]
 
 [tool.pytest.ini_options]
+addopts = ["--spec"]
 testpaths = ["."]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
