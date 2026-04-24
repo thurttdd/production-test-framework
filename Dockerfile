@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: FSL-1.1-ALv2
 # Copyright (c) 2025 Delos Data, Inc.
 FROM docker:29.1-cli
-RUN apk add --no-cache curl bash openssl make openssh build-base sudo shadow
-
+RUN apk add --no-cache curl bash openssl make openssh build-base sudo shadow shadow-login
 # Create a non-root user
 ARG USERNAME=appuser
 ARG HOME=/home/$USERNAME
@@ -62,7 +61,7 @@ EOF
 WORKDIR /app/framework
 
 # Install all of the required python dependencies
-RUN uv venv --clear && uv sync && uv cache clean
+RUN uv venv --clear && uv sync --all-packages && uv cache clean
 
 # create a .env file in the framework directory
 RUN <<EOF
@@ -73,8 +72,8 @@ echo "CLUSTER=${CLUSTER:-production-test-cluster}" >> .env
 echo "ANSIBLE_REMOTE_USER=${ANSIBLE_REMOTE_USER:-appuser}" >> .env
 EOF
 
-# Create the test results directory
-RUN mkdir -p /app/results
+# Create the results, tests, and charts directories
+RUN mkdir -p /app/results /app/framework/tests /app/framework/charts
 
 CMD ["/app/framework/scripts/docker-entrypoint.sh"]
 

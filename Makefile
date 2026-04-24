@@ -44,6 +44,7 @@ TASK := ⏹
 # Default test arguments
 PYTEST_ARGS ?=
 TEST_MARKER ?= "k3s or lgtm or metrics"
+CI_JOB_ID ?= "local"
 
 help:
 	@echo ""
@@ -161,19 +162,26 @@ copy-kubeconfig-local: prereqs setup-kubeconfig
 	@chmod 600 ~/.kube/config && \
 	echo "$(TASK) kubeconfig copied to $(KUBECONFIG)"
 
-deploy-helm-charts: prereqs start-ssh-tunnel
+deploy-helm-charts: 
 	@echo "$(TASK) Deploying Helm charts on cluster $(CLUSTER)..."
-	@echo "KUBECONFIG: $(KUBECONFIG)"
-	cd /app/charts/mosaic && \
-	helm --kubeconfig=$(KUBECONFIG) dep update && \
-	helm --kubeconfig=$(KUBECONFIG) --create-namespace --namespace=mosaic --wait --timeout=10m upgrade --install mosaic .
+	cd /app/framework/charts/mosaic && \
+	helm dep update && \
+	helm -n mosaic upgrade --install mosaic . --wait --timeout 10m
 
-undeploy-helm-charts: prereqs start-ssh-tunnel
+undeploy-helm-charts: 
 	@echo "$(TASK) Removing Helm charts from cluster $(CLUSTER)..."
-	@echo "KUBECONFIG: $(KUBECONFIG)"
-	@cd /app/charts/mosaic
-	@kubectl --kubeconfig=$(KUBECONFIG) delete ns mosaic
+	@cd /app/framework/charts/mosaic && \	
+	kubectl delete ns mosaic
 	@echo "$(TASK) Helm charts removed from cluster $(CLUSTER)"
+
+create-test-cluster: 
+	@echo creating the kubernetes cluster...
+	@k3d cluster create ${CI_JOB_ID}-k3s --api-port localhost:6443 --wait --timeout 10m
+	@kubectl create namespace mosaic
+
+destroy-test-cluster: 
+	@echo destroying the kubernetes cluster...
+	-@sudo k3d cluster delete ${CI_JOB_ID}-k3s
 
 # =============================================================================
 # NCCL Profiler OTEL Targets
@@ -225,7 +233,7 @@ profiler-otel-test-only: run-otel-test
 # Single test run (one marker). QASE_TESTOPS_RUN_TITLE is exported above.
 run-tests: prereqs
 	@echo "$(TASK) Running tests with marker: $(TEST_MARKER)..."
-	@cd $(TESTS_DIR) && uv run pytest -m $(TEST_MARKER) -v $(PYTEST_ARGS) .; \
+	@cd $(TESTS_DIR) && uv run pytest -m "$(TEST_MARKER)" -v $(PYTEST_ARGS) .; \
 	exit $$?;
 
 
@@ -252,3 +260,8 @@ test-deploy-only-lc: prereqs setup-kubeconfig-lc deploy-helm-charts run-all-test
 
 test-run-only-lc: prereqs
 	@$(MAKE) run-tests TEST_MARKER='not teardown'; EXIT_CODE=$$?; exit $$EXIT_CODE
+
+test-production: create-test-cluster deploy-helm-charts run-tests destroy-test-cluster
+
+test-openmosaic: run-tests
+

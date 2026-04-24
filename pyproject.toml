@@ -37,4 +37,4 @@ cache_dir = "/app/framework/.pytest_cache"
 packages = ["."]
 
 [tool.uv.workspace]
-members = ["tests"]
+members = ["unit_tests", "tests"]
