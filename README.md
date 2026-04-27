@@ -33,7 +33,7 @@ Before using the framework, ensure you have the following installed:
 - `kubectl` - Kubernetes command-line tool
 - `helm` - Kubernetes package manager
 - `uv` - Python package manager
-- **k3d** and **sudo** (only for `test-production`, `create-test-cluster`, and `destroy-test-cluster`, which create/delete a local k3d cluster)
+- **k3d** and **sudo** (only for `test-production`, `create-test-cluster`, and `destroy-test-cluster`, which create/deletes a local k3d cluster)
 
 ### Required Environment Variables
 
@@ -72,11 +72,7 @@ Verify all prerequisites are installed and environment variables are set:
 make prereqs
 ```
 
-### 3. Cluster access
-
-`deploy-helm-charts` and the test targets expect a working **`kubectl` context** (and write permissions for whatever cluster you use). For a self-contained run on a workstation, use **`make test-production`**, which creates a k3d cluster, deploys charts, runs tests, and tears the cluster down (see [Makefile targets](#makefile-targets)).
-
-### 4. Run tests
+### 3. Run tests
 
 ```bash
 # Full flow: deploy Helm charts -> run tests -> undeploy
