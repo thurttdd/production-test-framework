@@ -13,19 +13,18 @@ The framework enables end-to-end testing of the following areas:
 
 ## Quick Start
 
-To get tests running with a single command: clone the repo, copy and edit `.env` (from `env.example`) and `ansible/inventory.ini` (from `ansible/inventory.example.ini`) with your host and credentials, then run:
+To get tests running with a single command: clone the repo, copy and edit `.env` to set the required and optional environment variables:
 
 ```bash
 git clone <repo-url> production-test-framework
 cd production-test-framework
 cp env.example .env
-cp ansible/inventory.example.ini ansible/inventory.ini
-# Edit .env and ansible/inventory.ini with your hostnames and credentials
+# Edit .env: CLUSTER, and the other fields checked by `make prereqs`
 uv sync
 make test
 ```
 
-For more detail (prerequisites, cluster setup, other test targets), see the full **Quick Start** guide below.
+The sections below cover prerequisites, cluster access, the other [Makefile targets](#makefile-targets), and [running in Docker](#running-with-docker).
 
 ## Prerequisites
 
@@ -34,7 +33,7 @@ Before using the framework, ensure you have the following installed:
 - `kubectl` - Kubernetes command-line tool
 - `helm` - Kubernetes package manager
 - `uv` - Python package manager
-- SSH access to the target cluster host
+- **k3d** and **sudo** (only for `test-production`, `create-test-cluster`, and `destroy-test-cluster`, which create/deletes a local k3d cluster)
 
 ### Required Environment Variables
 
@@ -46,8 +45,6 @@ export REMOTE_HOST="target-cluster-hostname-or-ip"
 export CLUSTER="cluster-name"
 export ANSIBLE_INVENTORY_FILE="/path/to/ansible/inventory.ini"
 ```
-
-SSH uses key forwarding (agent); ensure your SSH agent has the key loaded (`ssh-add`) or that you use an environment where keys are forwarded (e.g. `ForwardAgent yes` in SSH config).
 
 For Qase test reporting, set **`QASE_TESTOPS_API_TOKEN`** (optional). If unset, `make prereqs` will report it as missing but tests can still run.
 
@@ -63,8 +60,7 @@ Clone this repository, then create your local configuration:
 git clone <repo-url> production-test-framework
 cd production-test-framework
 cp env.example .env
-cp ansible/inventory.example.ini ansible/inventory.ini
-# Edit .env and ansible/inventory.ini with your hostnames and credentials
+# Edit .env (and add ansible/inventory.ini if you use Ansible outside this Makefile)
 uv sync
 ```
 
@@ -76,84 +72,59 @@ Verify all prerequisites are installed and environment variables are set:
 make prereqs
 ```
 
-### 3. Set Up a Cluster
-
-The framework can bootstrap a new k3s cluster or work with an existing one:
+### 3. Run tests
 
 ```bash
-# Bootstrap k3s on the target host (if needed)
-make bootstrap-k3s
-
-# Set up SSH tunnel for kubectl access
-make start-ssh-tunnel
-
-# Copy kubeconfig from remote to local (for tunnel-based workflows)
-make copy-kubeconfig-local
-```
-
-### 4. Run Tests
-
-The framework provides use-case targets (default: SSH tunnel + local kubeconfig):
-
-```bash
-# Full plan: setup k3s -> deploy -> run all tests -> undeploy -> teardown k3s
+# Full flow: deploy Helm charts -> run tests -> undeploy
 make test
 
-# Deploy only: tunnel -> deploy -> run all tests -> undeploy
-make test-deploy-only
-
-# Run tests only: tunnel -> copy kubeconfig -> run tests
+# No deploy/undeploy: run the main suite (marker "not teardown")
 make test-run-only
+
+# k3d lifecycle: create cluster -> deploy -> run-tests -> destroy cluster
+make test-production
+
+# Same as `make run-tests` with Open Mosaic specific setup and test markers
+make test-openmosaic
 ```
 
-When running from the cluster control plane (repo cloned there, same layout), use the **-lc** (local cluster) targets; they use **setup-kubeconfig** with **LOCAL_CLUSTER=true** (via **setup-kubeconfig-lc**) instead of a tunnel and **copy-kubeconfig-local**:
-
-```bash
-make test-lc
-make test-deploy-only-lc
-make test-run-only-lc
-```
+Run `make help` for the full list, or `make help-container-targets` in the [Docker image](#running-with-docker).
 
 ## Makefile Targets
 
 ### Infrastructure management
 
 - **`prereqs`** - Check for missing prerequisites and environment variables
-- **`bootstrap-k3s`** - Bootstrap k3s on target host (uses Ansible from project Python deps)
-- **`start-ssh-tunnel`** / **`stop-ssh-tunnel`** - Set up or shut down API tunnel (localhost:6443 → REMOTE_HOST:6443)
-- **`setup-kubeconfig`** - Copy k3s kubeconfig and set permissions. With **LOCAL_CLUSTER=true** runs locally; otherwise SSHs to remote and runs there.
-- **`copy-kubeconfig-local`** - Copy kubeconfig from remote to ~/.kube/config (for tunnel-based targets; depends on setup-kubeconfig)
-- **`setup-kubeconfig-lc`** - Invoke setup-kubeconfig with LOCAL_CLUSTER=true (for -lc targets)
-- **`deploy-helm-charts`** / **`undeploy-helm-charts`** - Deploy or remove Helm charts (tunnel + local kubeconfig)
+- **`deploy-helm-charts`** - Deploy charts (expects `kubectl` context configured; uses `CLUSTER` in messages)
+- **`undeploy-helm-charts`** - Remove the `mosaic` namespace / release
 
-### NCCL Profiler OTEL targets
+### Setting up a test cluster using k3d and k3s
 
-- **`profiler-otel-start`** - Start OTEL stack and vLLM with NCCL profiler
-- **`profiler-otel-stop`** - Stop vLLM and OTEL stack containers
-- **`profiler-otel-logs`** - Tail vLLM container logs
-- **`profiler-otel-status`** - Show container and health status
-- **`profiler-otel-test`** - Run NCCL profiler OTEL tests (requires running stack)
+- **`create-test-cluster`** - Create a k3d cluster named `${CI_JOB_ID}-k3s` and a `mosaic` namespace
+- **`destroy-test-cluster`** - Delete that k3d cluster
 
-### Test targets (default: tunnel + local kubeconfig)
+### Building blocks
 
-- **`test`** - Full plan: bootstrap k3s → start tunnel → copy kubeconfig → deploy → run all tests → stop tunnel
-- **`test-deploy-only`** - Start tunnel → copy kubeconfig → deploy → run all tests → undeploy → stop tunnel
-- **`test-run-only`** - Start tunnel → copy kubeconfig → run tests → stop tunnel
+- **`run-tests`** - Run pytest once with `TEST_MARKER` (no Helm undeploy, no separate teardown pass)
+- **`run-all-tests`** - `run-tests`, then `undeploy-helm-charts`, then pytest with the `teardown` marker
+- **`help`** / **`help-container-targets`** - Print help (the latter is a short list for container/CI use)
 
-### Test targets (-lc: run on local cluster; no tunnel)
+### Top-level tests
 
-- **`test-lc`** - Same as test; run from cluster control plane (uses setup-kubeconfig LOCAL_CLUSTER=true)
-- **`test-deploy-only-lc`** - Same as test-deploy-only; run from cluster host
-- **`test-run-only-lc`** - Run tests only; run from cluster host
+- **`test`** - `prereqs` → `deploy-helm-charts` → `run-all-tests` (main tests, undeploy, teardown tests)
+- **`test-run-only`** - `prereqs` and a `run-tests` with marker `not teardown` (no deploy/undeploy)
+- **`test-production`** - `create-test-cluster` → `deploy-helm-charts` → `run-tests` → `destroy-test-cluster`
+- **`test-openmosaic`** - Same as `run-tests` (convenience target for an already-running stack)
 
 ### Test options
 
-- **`TEST_MARKER`** - Pytest marker (default: `k3s or lgtm`). Use `not teardown` for the main test suite.
+- **`TEST_MARKER`** - Pytest marker (default: `k3s or lgtm or metrics`). `test-run-only` forces `not teardown` in the Makefile; set `TEST_MARKER` for other targets as needed.
 - **`PYTEST_ARGS`** - Extra arguments passed to pytest.
 - **`QASE_TESTOPS_RUN_TITLE`** - Qase automated test run title. Default: "Production test run <commit-hash> [dirty]". Override for CI or custom runs.
+- **`CI_JOB_ID`** - Used in the k3d cluster name (default `local`); set in CI to avoid collisions.
 
 ```bash
-make test-run-only TEST_MARKER='not teardown' PYTEST_ARGS='-x'
+make test-run-only PYTEST_ARGS='-x'
 make test QASE_TESTOPS_RUN_TITLE="CI run 123"
 ```
 
@@ -169,6 +140,7 @@ By default, tests are expected in `./tests/lgtm/` (a child directory). Set `TEST
 Tests use pytest markers for organization:
 - `k3s` - K3s cluster validation tests
 - `lgtm` - LGTM stack integration tests
+- `metrics` - Metrics-related tests (when present)
 - `teardown` - Teardown validation tests
 
 
@@ -192,7 +164,7 @@ Build the image as shown above. To run the container with a minimal setup:
 docker run -it --rm production-test-framework
 ```
 
-The sections below describe how to set environment variables, enable SSH agent forwarding, and mount your test files and mosaic root so you can run tests inside the container.
+The sections below describe how to set environment variables, optionally forward SSH, and mount your tests and Helm charts so you can run `make` inside the container.
 
 ### 2. Environment variables for the container
 
@@ -205,9 +177,9 @@ You can provide them by:
 
 If you do not mount a `.env` file, the image uses built-in defaults (see the Dockerfile). Copy [env.example](env.example) to `.env` and edit it for your environment.
 
-### 3. SSH agent forwarding
+### 3. SSH agent forwarding (optional)
 
-Ansible inside the container needs to reach your target hosts via SSH. Use SSH agent forwarding so the container can use your host’s keys:
+If you run Ansible or other tools that SSH from the container, forward your agent so keys are available:
 
 1. On the host, ensure your SSH agent has the key loaded: `ssh-add -l` (use `ssh-add` to add it).
 2. When running the container, pass the agent socket in:
@@ -216,10 +188,10 @@ Ansible inside the container needs to reach your target hosts via SSH. Use SSH a
 
 If SSH connections fail, see [SSH Connection Issues](#ssh-connection-issues) in Troubleshooting.
 
-### 4. Mounting test files and mosaic helm charts
+### 4. Mounting test files and mosaic Helm charts
 
-- **Tests:** The framework expects tests at **`TESTS_DIR`**. Inside the container the default is `./tests` (i.e. **`/app/framework/tests`** when the working directory is `/app/framework`). Mount your host tests directory there, e.g. `-v /path/to/your/tests:/app/framework/tests:ro`. Tests are implemented in Python and run with pytest.
-- **Helm charts:** The framework expects the mosaic helm charts to be at `/app/charts/mosaic`. Mount the location of the mosaic helm charts to use **`deploy-helm-charts`** and **`undeploy-helm-charts`**. For example, run the container with `: `-v /path/to/mosaic/charts:/app/charts/mosaic:ro`.
+- **Tests:** The Makefile uses **`/app/framework/tests`** (see `TESTS_DIR`). The [docker entrypoint](scripts/docker-entrypoint.sh) copies **`/app/tests/*`** into `/app/framework/tests/`, so a typical mount is `-v /path/to/your/tests:/app/tests:ro`. You can also mount straight to `/app/framework/tests` if you do not rely on that copy. Tests are Python and run with pytest.
+- **Helm charts:** The Makefile runs Helm from `/app/framework/charts/mosaic` (see `deploy-helm-charts`). You can mount that path directly, e.g. `-v /path/to/mosaic/charts/mosaic:/app/framework/charts/mosaic:ro`. Alternatively, mount your charts under **`/app/charts`**; [scripts/docker-entrypoint.sh](scripts/docker-entrypoint.sh) copies `/app/charts/*` into `/app/framework/charts/` at container start.
 
 A full example that combines `.env`, tests, mosaic, and SSH agent forwarding is shown in the code block in the next section; see also [scripts/launch_framework.sh](scripts/launch_framework.sh).
 
@@ -230,16 +202,17 @@ By default, the container starts an interactive shell in `/app/framework`. The e
 ```bash
 make test
 make test-run-only
-make test-deploy-only
+make test-production
+make test-openmosaic
 ```
 
-The Makefile loads `.env` from the framework directory, so a mounted `.env` is used automatically. For a full `docker run` example with env, tests, helm charts, kubeconfig, and SSH forwarding:
+The Makefile loads `.env` from the framework directory, so a mounted `.env` is used automatically. For a full `docker run` example with env, tests, Helm charts, and optional SSH forwarding:
 
 ```bash
 docker run -it --rm \
   -v $(pwd)/.env:/app/framework/.env:ro \
-  -v /path/to/your/tests:/app/framework/tests:ro \
-  -v /path/to/mosaic/charts:/app/charts/mosaic:ro \
+  -v /path/to/your/tests:/app/tests:ro \
+  -v /path/to/helm/charts/mosaic:/app/framework/charts/mosaic:ro \
   -e SSH_AUTH_SOCK=/tmp/ssh-agent/socket \
   -v $SSH_AUTH_SOCK:/tmp/ssh-agent/socket \
   production-test-framework
@@ -255,8 +228,8 @@ If you set **`RUN_MAKE_TARGET`**, the entrypoint runs that make target and exits
 docker run -it --rm \
   -e RUN_MAKE_TARGET=test-run-only \
   -v $(pwd)/.env:/app/framework/.env:ro \
-  -v /path/to/your/tests:/app/framework/tests:ro \
-  -v /path/to/mosaic/charts:/app/charts/mosaic:ro \
+  -v /path/to/your/tests:/app/tests:ro \
+  -v /path/to/helm/charts/mosaic:/app/framework/charts/mosaic:ro \
   -e SSH_AUTH_SOCK=/tmp/ssh-agent/socket \
   -v $SSH_AUTH_SOCK:/tmp/ssh-agent/socket \
   production-test-framework
@@ -279,7 +252,7 @@ brew install kubectl helm
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Ansible is provided by the project's Python dependencies; run `uv sync` from the project root (or use a test target, which syncs dependencies) so that `ansible` is available on your PATH via `uv run`.
+Ansible is provided by the project's Python dependencies; run `uv sync` from the project root so that `ansible` is available on your PATH via `uv run` when you need it.
 
 ### SSH Connection Issues
 
@@ -288,21 +261,6 @@ If SSH connections fail:
 1. Ensure your SSH agent has the key loaded: `ssh-add -l` (use `ssh-add` to add it).
 2. Test SSH connection manually: `ssh $ANSIBLE_REMOTE_USER@$REMOTE_HOST`
 3. Check that `ANSIBLE_REMOTE_USER` and `REMOTE_HOST` are set correctly
-
-### API Tunnel Issues
-
-If the API tunnel fails:
-
-```bash
-# Check if tunnel socket exists
-ls -la /tmp/api-tunnel.sock
-
-# Manually shutdown tunnel
-make stop-ssh-tunnel
-
-# Recreate tunnel
-make start-ssh-tunnel
-```
 
 ### Test Failures
 
@@ -313,9 +271,6 @@ If tests fail:
 3. Check Helm chart deployment: `helm list -n mosaic`
 4. Review test output for specific error messages
 
-## NCCL Profiler / vLLM (optional)
-
-The `profiler-otel-*` targets and `profiler/docker-compose.yml` are for running the OTEL stack and vLLM with an NCCL profiler. They require an external repository (or compatible layout) and the `MOSAIC_PATH` environment variable for includes and build context. See `profiler/docker-compose.yml` for details.
 
 ## Getting Help
 
