@@ -134,13 +134,13 @@ destroy-test-cluster:
 # Single test run (one marker). QASE_TESTOPS_RUN_TITLE is exported above.
 run-tests: prereqs
 	@echo "$(TASK) Running tests with marker: $(TEST_MARKER)..."
-	@cd $(TESTS_DIR) && uv run pytest -m "$(TEST_MARKER)" -v $(PYTEST_ARGS) .; \
+	@cd $(TESTS_DIR) && uv run pytest -m "$(TEST_MARKER)" -v $$PYTEST_ARGS .; \
 	exit $$?;
 
 # Full test plan: main tests -> undeploy -> teardown tests (for use cases that deploy)
 run-all-tests: run-tests undeploy-helm-charts
 	@echo "$(TASK) Running teardown tests..."; \
-	cd $(TESTS_DIR) && uv run pytest -m teardown -v $(PYTEST_ARGS) .; \
+	cd $(TESTS_DIR) && uv run pytest -m teardown -v $$PYTEST_ARGS .; \
 	exit $$?;
 
 # -----------------------------------------------------------------------------
