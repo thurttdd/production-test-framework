@@ -119,12 +119,12 @@ Run `make help` for the full list, or `make help-container-targets` in the [Dock
 ### Test options
 
 - **`TEST_MARKER`** - Pytest marker (default: `k3s or lgtm or metrics`). `test-run-only` forces `not teardown` in the Makefile; set `TEST_MARKER` for other targets as needed.
-- **`PYTEST_ARGS`** - Extra arguments passed to pytest.
+- **`PYTEST_ADDOPTS`** - Extra pytest options (pytest reads this environment variable).
 - **`QASE_TESTOPS_RUN_TITLE`** - Qase automated test run title. Default: "Production test run <commit-hash> [dirty]". Override for CI or custom runs.
 - **`CI_JOB_ID`** - Used in the k3d cluster name (default `local`); set in CI to avoid collisions.
 
 ```bash
-make test-run-only PYTEST_ARGS='-x'
+make test-run-only PYTEST_ADDOPTS='-x'
 make test QASE_TESTOPS_RUN_TITLE="CI run 123"
 ```
 

@@ -33,8 +33,9 @@ OK := ✅
 ERR := ❌
 TASK := ⏹
 
-# Default test arguments
-PYTEST_ARGS ?=
+# Pytest: extra flags only (pytest reads env PYTEST_ADDOPTS; do not put -m here, use TEST_MARKER)
+PYTEST_ADDOPTS ?=
+export PYTEST_ADDOPTS
 TEST_MARKER ?= "k3s or lgtm or metrics"
 CI_JOB_ID ?= "local"
 
@@ -65,7 +66,7 @@ help:
 	@echo ""
 	@echo "Test options:"
 	@echo "  TEST_MARKER='...'         - Pytest marker (default: k3s or lgtm or metrics). Use 'not teardown' for main suite."
-	@echo "  PYTEST_ARGS='...'         - Extra pytest arguments"
+	@echo "  PYTEST_ADDOPTS            - Extra command line options to send to pytest"
 	@echo "  QASE_TESTOPS_RUN_TITLE    - Qase run title (default: Production test run <commit-hash> [dirty])"
 	@echo ""
 
@@ -78,7 +79,7 @@ help-container-targets:
 	@echo ""
 	@echo "Test options:"
 	@echo "  TEST_MARKER='...'         - Pytest markers (default: k3s or lgtm or metrics). Use 'not teardown' for main suite."
-	@echo "  PYTEST_ARGS='...'         - Extra pytest arguments"
+	@echo "  PYTEST_ADDOPTS            - Extra command line options to send to pytest"
 	@echo "  QASE_TESTOPS_RUN_TITLE    - Qase run title (default: Production test run <commit-hash> [dirty])"
 	@echo ""
 
@@ -134,13 +135,13 @@ destroy-test-cluster:
 # Single test run (one marker). QASE_TESTOPS_RUN_TITLE is exported above.
 run-tests: prereqs
 	@echo "$(TASK) Running tests with marker: $(TEST_MARKER)..."
-	@cd $(TESTS_DIR) && uv run pytest -m "$(TEST_MARKER)" -v $(PYTEST_ARGS) .; \
+	@cd $(TESTS_DIR) && uv run pytest -m "$(TEST_MARKER)" -v .; \
 	exit $$?;
 
 # Full test plan: main tests -> undeploy -> teardown tests (for use cases that deploy)
 run-all-tests: run-tests undeploy-helm-charts
 	@echo "$(TASK) Running teardown tests..."; \
-	cd $(TESTS_DIR) && uv run pytest -m teardown -v $(PYTEST_ARGS) .; \
+	cd $(TESTS_DIR) && uv run pytest -m teardown -v .; \
 	exit $$?;
 
 # -----------------------------------------------------------------------------
