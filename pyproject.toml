@@ -30,6 +30,7 @@ build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
 cache_dir = "/app/framework/.pytest_cache"
+pythonpath = ["/app"]
 #log_cli = "true"
 #log_cli_level = "INFO"
 
