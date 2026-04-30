@@ -9,7 +9,7 @@ from enum import Enum
 
 from vllm import VllmClient, VllmConfig
 
-from .workload import Workload, WorkloadResult, WorkloadStatus
+from workload.workload import Workload, WorkloadResult, WorkloadStatus
 
 
 class BACKEND_TYPE(Enum):

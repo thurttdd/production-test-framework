@@ -9,8 +9,8 @@ import time
 from concurrent.futures import CancelledError, Future
 from typing import Optional, Tuple
 
-from ..helper import run_cancellable_command
-from .workload import Workload, WorkloadResult, WorkloadStatus
+from helper import run_cancellable_command
+from workload.workload import Workload, WorkloadResult, WorkloadStatus
 
 
 class BenchmarkCancelled(Exception):

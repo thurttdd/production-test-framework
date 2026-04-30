@@ -13,7 +13,7 @@ from typing import Optional
 
 import paramiko
 
-from .config import LGTMConfig
+from config import LGTMConfig
 
 
 @dataclass

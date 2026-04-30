@@ -17,9 +17,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from .config import LGTMConfig
-from .helper import is_localhost, run_command
-from .ssh import SSHExecutor, CommandResult
+from config import LGTMConfig
+from helper import is_localhost, run_command
+from ssh import SSHExecutor, CommandResult
 
 
 @dataclass

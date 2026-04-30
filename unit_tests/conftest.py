@@ -22,7 +22,7 @@ def _add_production_test_framework_to_sys_path():
 _add_production_test_framework_to_sys_path()
 
 
-from production_test_framework.config import LGTMConfig
+from config import LGTMConfig
 
 
 @pytest.fixture
