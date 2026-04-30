@@ -135,7 +135,7 @@ destroy-test-cluster:
 # Single test run (one marker). QASE_TESTOPS_RUN_TITLE is exported above.
 run-tests: prereqs
 	@echo "$(TASK) Running tests with marker: $(TEST_MARKER)..."
-	@uv run pytest -m "$(TEST_MARKER)" -v $(TESTS_DIR); \
+	@uv run pytest -m $(TEST_MARKER) -v $(TESTS_DIR); \
 	exit $$?;
 
 # Full test plan: main tests -> undeploy -> teardown tests (for use cases that deploy)
