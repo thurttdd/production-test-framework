@@ -3,7 +3,7 @@
 
 [project]
 name = "production-test-framework"
-version = "0.1.0"
+version = "0.2.0"
 description = "Production test framework for k3s, LGTM stack, and integration testing"
 readme = "README.md"
 license = { text = "FSL-1.1-ALv2" }
@@ -30,12 +30,11 @@ build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
 cache_dir = "/app/framework/.pytest_cache"
-pythonpath = ["/app"]
 #log_cli = "true"
 #log_cli_level = "INFO"
 
 [tool.hatch.build.targets.wheel]
-packages = ["."]
+packages = ["src/production_test_framework"]
 
 [tool.uv.workspace]
-members = ["unit_tests", "tests"]
+members = ["unit_tests"]

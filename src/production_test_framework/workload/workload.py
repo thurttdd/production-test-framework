@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable
 
-from utils.polling import wait_for
+from production_test_framework.utils.polling import wait_for
 
 
 class WorkloadStatus(Enum):

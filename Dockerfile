@@ -44,10 +44,9 @@ USER $USERNAME
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/${HOME}/.local/bin:/app/.venv/bin:${PATH}"
 
-# python
+# python: framework is installed into .venv via uv sync (editable workspace install;
+# changes under src/production_test_framework/ are picked up without rebuilding the image).
 RUN uv python install 3.14
-
-ENV PYTHONPATH=/app
 
 # Copy framework (current context = repo root)
 COPY --chown=$USERNAME:$USERNAME . ./framework/

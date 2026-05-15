@@ -15,7 +15,7 @@ from typing import List, Optional
 
 import requests
 
-from ssh import CommandResult
+from production_test_framework.ssh import CommandResult
 
 
 def is_localhost(host: str) -> bool:

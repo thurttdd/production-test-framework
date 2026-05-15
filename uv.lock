@@ -1001,11 +1001,15 @@ name = "unit-tests"
 version = "0.1.0"
 source = { virtual = "unit_tests" }
 dependencies = [
+    { name = "production-test-framework" },
     { name = "pytest-spec" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pytest-spec", specifier = ">=6.0.0" }]
+requires-dist = [
+    { name = "production-test-framework", editable = "." },
+    { name = "pytest-spec", specifier = ">=6.0.0" },
+]
 
 [[package]]
 name = "urllib3"

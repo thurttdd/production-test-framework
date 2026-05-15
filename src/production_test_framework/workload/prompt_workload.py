@@ -7,9 +7,8 @@ import time
 from concurrent.futures import CancelledError, Future
 from enum import Enum
 
-from vllm import VllmClient, VllmConfig
-
-from workload.workload import Workload, WorkloadResult, WorkloadStatus
+from production_test_framework.vllm import VllmClient, VllmConfig
+from production_test_framework.workload.workload import Workload, WorkloadResult, WorkloadStatus
 
 
 class BACKEND_TYPE(Enum):
