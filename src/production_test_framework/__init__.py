@@ -6,6 +6,9 @@
 from importlib.metadata import PackageNotFoundError, version
 
 try:
-    __version__ = version("production-test-framework")
-except PackageNotFoundError:
-    __version__ = "0.1.0"
+    from ._version import __version__
+except ImportError:
+    try:
+        __version__ = version("production-test-framework")
+    except PackageNotFoundError:
+        __version__ = "0.0.0"
