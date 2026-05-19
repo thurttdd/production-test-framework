@@ -751,7 +751,6 @@ wheels = [
 
 [[package]]
 name = "production-test-framework"
-version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "ansible-core" },

@@ -59,6 +59,11 @@ EOF
 
 WORKDIR /app/framework
 
+# Optional: set at image build time when .git is unavailable (e.g. trimmed context).
+# Tag releases pass SETUPTOOLS_SCM_PRETEND_VERSION from CI (see .github/workflows/docker.yml).
+ARG SETUPTOOLS_SCM_PRETEND_VERSION=
+ENV SETUPTOOLS_SCM_PRETEND_VERSION=${SETUPTOOLS_SCM_PRETEND_VERSION}
+
 # Install all of the required python dependencies
 RUN uv venv --clear && uv sync --all-packages && uv cache clean
 
