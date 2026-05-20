@@ -7,7 +7,6 @@ import logging
 import threading
 import time
 from concurrent.futures import CancelledError, Future
-from typing import Optional, Tuple
 
 from production_test_framework.helper import run_cancellable_command
 from production_test_framework.workload.workload import Workload, WorkloadResult, WorkloadStatus
@@ -40,8 +39,8 @@ class InferencexWorkload(Workload):
         model: str = "Qwen/Qwen3-8B",
         backend: str = "vllm",
         dataset_name: str = "random",
-        benchmark_extra_args: Tuple[str, ...] = (),
-        docker_exec_timeout: float = 600.0
+        benchmark_extra_args: tuple[str, ...] = (),
+        docker_exec_timeout: float = 600.0,
     ):
         super().__init__()
         self.logger = logging.getLogger(__name__)
@@ -84,8 +83,18 @@ class InferencexWorkload(Workload):
         return inner
 
     def _docker_exec_cmd(self) -> list[str]:
-        return ["sudo", "docker", "run", "--rm", "-t", "--network", "host", "--name", self._container_name, self._image_name, *self._benchmark_inner_argv()]
-        self._logger.info("Running: %s", " ".join(cmd))
+        return [
+            "docker",
+            "run",
+            "--rm",
+            "-t",
+            "--network",
+            "host",
+            "--name",
+            self._container_name,
+            self._image_name,
+            *self._benchmark_inner_argv(),
+        ]
 
     def start(self):
         """Start the inferencex workload"""
@@ -102,7 +111,6 @@ class InferencexWorkload(Workload):
 
         self._completion_fut = self.submit_background(self._run_benchmark_sync)
         self._completion_fut.add_done_callback(self._on_benchmark_done)
-
 
     def _run_benchmark_sync(self) -> str:
         cmd = self._docker_exec_cmd()
@@ -151,4 +159,6 @@ class InferencexWorkload(Workload):
         self._completion_fut = None
 
     def get_result(self) -> WorkloadResult:
-        return WorkloadResult(start_time=self._start_time, end_time=self._end_time, result=self._result, status=self.status)
+        return WorkloadResult(
+            start_time=self._start_time, end_time=self._end_time, result=self._result, status=self.status
+        )
