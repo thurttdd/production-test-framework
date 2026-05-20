@@ -8,11 +8,11 @@ import time
 from unittest.mock import MagicMock, patch
 
 import pytest
-from ssh import CommandResult
-from vllm import InferenceResult
-from workload.inferencex_workload import InferencexWorkload
-from workload.prompt_workload import BACKEND_TYPE, PromptWorkload
-from workload.workload import Workload, WorkloadStatus
+from production_test_framework.ssh import CommandResult
+from production_test_framework.vllm import InferenceResult
+from production_test_framework.workload.inferencex_workload import InferencexWorkload
+from production_test_framework.workload.prompt_workload import BACKEND_TYPE, PromptWorkload
+from production_test_framework.workload.workload import Workload, WorkloadStatus
 
 
 class TestWorkloadStatus:
@@ -52,7 +52,7 @@ class TestWorkload:
                 return "done"
 
         with patch(
-            "workload.workload.wait_for",
+            "production_test_framework.workload.workload.wait_for",
             return_value=True,
         ) as mock_wait:
             wl = CompletingWorkload()
@@ -83,7 +83,7 @@ class TestWorkload:
                 return ""
 
         with patch(
-            "workload.workload.wait_for",
+            "production_test_framework.workload.workload.wait_for",
             return_value=False,
         ) as mock_wait:
             wl = NeverCompletingWorkload()
@@ -140,7 +140,7 @@ class TestInferencexWorkload:
     @pytest.fixture
     def mock_inferencex_run(self):
         with patch(
-            "workload.inferencex_workload.run_cancellable_command",
+            "production_test_framework.workload.inferencex_workload.run_cancellable_command",
         ) as m:
             m.return_value = CommandResult(
                 returncode=0,
@@ -259,7 +259,7 @@ class TestPromptWorkload:
     @pytest.fixture
     def mock_vllm_client_class(self):
         with patch(
-            "workload.prompt_workload.VllmClient",
+            "production_test_framework.workload.prompt_workload.VllmClient",
         ) as m:
             backend = MagicMock()
             backend.wait_for_ready = MagicMock(return_value=True)

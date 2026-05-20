@@ -7,7 +7,6 @@ GREEN='\033[0;32m'
 EC='\033[0m'
 
 
-# Set the PYTHONPATH environment variable to the overlay
 export PYTHONPATH=/app/framework/tests
 
 # Set the SSH_AUTH_SOCK environment variable to the forwarded ssh socket

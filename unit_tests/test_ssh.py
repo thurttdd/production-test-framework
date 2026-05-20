@@ -6,7 +6,7 @@
 import socket
 from unittest.mock import MagicMock, patch
 
-from ssh import CommandResult, SSHExecutor
+from production_test_framework.ssh import CommandResult, SSHExecutor
 
 
 class TestCommandResult:
@@ -26,7 +26,7 @@ class TestCommandResult:
 class TestSSHExecutor:
     """Tests for SSHExecutor with mocked Paramiko."""
 
-    @patch("ssh.paramiko.SSHClient")
+    @patch("production_test_framework.ssh.paramiko.SSHClient")
     def test_run_success(self, mock_ssh_cls, lgtm_config):
         mock_client = MagicMock()
         mock_ssh_cls.return_value = mock_client
@@ -48,7 +48,7 @@ class TestSSHExecutor:
         mock_client.connect.assert_called_once()
         mock_client.exec_command.assert_called_once_with("echo hello", timeout=60)
 
-    @patch("ssh.paramiko.SSHClient")
+    @patch("production_test_framework.ssh.paramiko.SSHClient")
     def test_run_connection_error_returns_command_result(self, mock_ssh_cls, lgtm_config):
         mock_ssh_cls.return_value = MagicMock()
         mock_ssh_cls.return_value.connect.side_effect = Exception("Connection refused")
@@ -60,7 +60,7 @@ class TestSSHExecutor:
         assert result.returncode == -1
         assert "Connection refused" in result.stderr
 
-    @patch("ssh.paramiko.SSHClient")
+    @patch("production_test_framework.ssh.paramiko.SSHClient")
     def test_run_kubectl_builds_correct_command(self, mock_ssh_cls, lgtm_config):
         mock_client = MagicMock()
         mock_ssh_cls.return_value = mock_client
@@ -80,7 +80,7 @@ class TestSSHExecutor:
         assert "--kubeconfig" in call_args
         assert "get pods -A" in call_args
 
-    @patch("ssh.paramiko.SSHClient")
+    @patch("production_test_framework.ssh.paramiko.SSHClient")
     def test_run_with_stdin_data(self, mock_ssh_cls, lgtm_config):
         mock_client = MagicMock()
         mock_ssh_cls.return_value = mock_client
@@ -99,7 +99,7 @@ class TestSSHExecutor:
         mock_stdin.flush.assert_called_once()
         mock_stdin.channel.shutdown_write.assert_called_once()
 
-    @patch("ssh.paramiko.SSHClient")
+    @patch("production_test_framework.ssh.paramiko.SSHClient")
     def test_check_service_active_true(self, mock_ssh_cls, lgtm_config):
         mock_client = MagicMock()
         mock_ssh_cls.return_value = mock_client
@@ -115,7 +115,7 @@ class TestSSHExecutor:
         call_args = mock_client.exec_command.call_args[0][0]
         assert "systemctl is-active k3s" in call_args
 
-    @patch("ssh.paramiko.SSHClient")
+    @patch("production_test_framework.ssh.paramiko.SSHClient")
     def test_check_service_active_false(self, mock_ssh_cls, lgtm_config):
         mock_client = MagicMock()
         mock_ssh_cls.return_value = mock_client
@@ -129,7 +129,7 @@ class TestSSHExecutor:
         executor = SSHExecutor(lgtm_config)
         assert executor.check_service_active("k3s") is False
 
-    @patch("ssh.paramiko.SSHClient")
+    @patch("production_test_framework.ssh.paramiko.SSHClient")
     def test_file_exists_true(self, mock_ssh_cls, lgtm_config):
         mock_client = MagicMock()
         mock_ssh_cls.return_value = mock_client
@@ -145,7 +145,7 @@ class TestSSHExecutor:
         call_args = mock_client.exec_command.call_args[0][0]
         assert "test -f '/etc/hosts'" in call_args
 
-    @patch("ssh.paramiko.SSHClient")
+    @patch("production_test_framework.ssh.paramiko.SSHClient")
     def test_read_file_returns_content(self, mock_ssh_cls, lgtm_config):
         mock_client = MagicMock()
         mock_ssh_cls.return_value = mock_client
@@ -160,7 +160,7 @@ class TestSSHExecutor:
         content = executor.read_file("/path/to/file")
         assert content == "file content"
 
-    @patch("ssh.paramiko.SSHClient")
+    @patch("production_test_framework.ssh.paramiko.SSHClient")
     def test_read_file_returns_none_on_failure(self, mock_ssh_cls, lgtm_config):
         mock_client = MagicMock()
         mock_ssh_cls.return_value = mock_client
@@ -174,7 +174,7 @@ class TestSSHExecutor:
         executor = SSHExecutor(lgtm_config)
         assert executor.read_file("/nonexistent") is None
 
-    @patch("ssh.paramiko.SSHClient")
+    @patch("production_test_framework.ssh.paramiko.SSHClient")
     def test_run_timeout_returns_command_result(self, mock_ssh_cls, lgtm_config):
         mock_client = MagicMock()
         mock_ssh_cls.return_value = mock_client
@@ -187,7 +187,7 @@ class TestSSHExecutor:
         assert result.returncode == -1
         assert "timed out" in result.stderr
 
-    @patch("ssh.paramiko.SSHClient")
+    @patch("production_test_framework.ssh.paramiko.SSHClient")
     def test_close_clears_client(self, mock_ssh_cls, lgtm_config):
         mock_client = MagicMock()
         mock_ssh_cls.return_value = mock_client

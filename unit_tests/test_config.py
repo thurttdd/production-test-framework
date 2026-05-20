@@ -6,7 +6,7 @@
 import os
 from unittest.mock import patch
 
-from config import LGTMConfig
+from production_test_framework.config import LGTMConfig
 
 
 class TestLGTMConfig:

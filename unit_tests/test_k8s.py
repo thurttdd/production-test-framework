@@ -8,15 +8,15 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from config import LGTMConfig
-from k8s import (
+from production_test_framework.config import LGTMConfig
+from production_test_framework.k8s import (
     Node,
     Pod,
     KubernetesClient,
     LocalKubectlPortForwarder,
     LocalPortForward,
 )
-from ssh import CommandResult
+from production_test_framework.ssh import CommandResult
 
 
 class TestNode:
@@ -273,7 +273,7 @@ class TestKubernetesClientLocalhost:
 
     def test_localhost_uses_subprocess_not_ssh(self, localhost_config, mock_ssh):
         client = KubernetesClient(localhost_config, ssh=mock_ssh)
-        with patch("helper.subprocess.run") as mock_run:
+        with patch("production_test_framework.helper.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,
                 stdout="node1   Ready   control-plane   1.28   192.168.1.1\n",
@@ -292,7 +292,7 @@ class TestKubernetesClientLocalhost:
     def test_127_0_0_1_uses_subprocess(self, mock_ssh):
         cfg = LGTMConfig(host="127.0.0.1", ansible_remote_user="u")
         client = KubernetesClient(cfg, ssh=mock_ssh)
-        with patch("helper.subprocess.run") as mock_run:
+        with patch("production_test_framework.helper.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
             client.get_namespaces()
             mock_ssh.run_kubectl.assert_not_called()
@@ -302,13 +302,13 @@ class TestKubernetesClientLocalhost:
 class TestLocalKubectlPortForwarder:
     """Tests for LocalKubectlPortForwarder with mocked subprocess."""
 
-    @patch("k8s.subprocess.Popen")
+    @patch("production_test_framework.k8s.subprocess.Popen")
     def test_start_service_tunnel_builds_correct_command(self, mock_popen):
         mock_proc = MagicMock()
         mock_proc.poll.return_value = None
         mock_popen.return_value = mock_proc
 
-        with patch("k8s.socket.socket") as mock_socket_cls:
+        with patch("production_test_framework.k8s.socket.socket") as mock_socket_cls:
             mock_sock = MagicMock()
             mock_socket_cls.return_value = mock_sock
             mock_sock.connect_ex.return_value = 0

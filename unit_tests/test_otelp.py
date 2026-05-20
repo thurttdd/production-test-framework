@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from telemetry.otelp import (
+from production_test_framework.telemetry.otelp import (
     Otelp,
     OtelpConfig,
     create_otelp,
@@ -38,7 +38,7 @@ class TestOtelp:
         assert otelp.is_connected is False
         assert otelp.config.service_name == ""
 
-    @patch("telemetry.otelp.socket.socket")
+    @patch("production_test_framework.telemetry.otelp.socket.socket")
     def test_test_otlp_connectivity_success(self, mock_socket_cls):
         mock_sock = MagicMock()
         mock_socket_cls.return_value = mock_sock
@@ -50,7 +50,7 @@ class TestOtelp:
         assert result is True
         mock_sock.connect_ex.assert_called_once_with(("collector", 4317))
 
-    @patch("telemetry.otelp.socket.socket")
+    @patch("production_test_framework.telemetry.otelp.socket.socket")
     def test_test_otlp_connectivity_failure(self, mock_socket_cls):
         mock_sock = MagicMock()
         mock_socket_cls.return_value = mock_sock
@@ -61,7 +61,7 @@ class TestOtelp:
 
         assert result is False
 
-    @patch("telemetry.otelp.socket.socket")
+    @patch("production_test_framework.telemetry.otelp.socket.socket")
     def test_test_otlp_connectivity_strips_protocol(self, mock_socket_cls):
         mock_sock = MagicMock()
         mock_socket_cls.return_value = mock_sock
@@ -78,7 +78,7 @@ class TestOtelp:
         result = otelp._test_otlp_connectivity()
         assert result is False
 
-    @patch("telemetry.otelp.socket.socket")
+    @patch("production_test_framework.telemetry.otelp.socket.socket")
     def test_test_otlp_connectivity_socket_error(self, mock_socket_cls):
         mock_socket_cls.return_value.connect_ex.side_effect = socket.error("refused")
         otelp = Otelp("host:4317")

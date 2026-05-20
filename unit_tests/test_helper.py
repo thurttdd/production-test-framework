@@ -8,20 +8,21 @@ import threading
 import time
 from unittest.mock import MagicMock, patch
 
-from helper import (
+from production_test_framework.helper import (
     check_tcp_connectivity,
-    get_mimir_base_url, is_localhost,
+    get_mimir_base_url,
+    is_localhost,
     query_mimir,
     run_cancellable_command,
     run_command,
-    wait_for_tcp_connectivity
+    wait_for_tcp_connectivity,
 )
 
 
 class TestRunCommand:
     """Tests for run_command."""
 
-    @patch("helper.subprocess.run")
+    @patch("production_test_framework.helper.subprocess.run")
     def test_success(self, mock_run):
         mock_run.return_value = MagicMock(returncode=0, stdout=" out \n", stderr="")
         r = run_command(["/bin/echo", "hi"], timeout=5)
@@ -29,7 +30,7 @@ class TestRunCommand:
         assert r.stdout == "out"
         mock_run.assert_called_once()
 
-    @patch("helper.subprocess.run")
+    @patch("production_test_framework.helper.subprocess.run")
     def test_timeout(self, mock_run):
         import subprocess as sp
 
@@ -38,7 +39,7 @@ class TestRunCommand:
         assert r.returncode == -1
         assert "timed out" in r.stderr
 
-    @patch("helper.subprocess.run")
+    @patch("production_test_framework.helper.subprocess.run")
     def test_executable_not_found(self, mock_run):
         mock_run.side_effect = FileNotFoundError(2, "No such file")
         r = run_command(["nonexistent-binary-xyz"], timeout=5)
@@ -124,7 +125,7 @@ class TestCheckTcpConnectivity:
     """Tests for check_tcp_connectivity."""
 
     def test_connectivity_success(self):
-        with patch("helper.socket.socket") as mock_socket_cls:
+        with patch("production_test_framework.helper.socket.socket") as mock_socket_cls:
             mock_sock = MagicMock()
             mock_socket_cls.return_value = mock_sock
             mock_sock.connect_ex.return_value = 0
@@ -136,7 +137,7 @@ class TestCheckTcpConnectivity:
             mock_sock.close.assert_called_once()
 
     def test_connectivity_failure(self):
-        with patch("helper.socket.socket") as mock_socket_cls:
+        with patch("production_test_framework.helper.socket.socket") as mock_socket_cls:
             mock_sock = MagicMock()
             mock_socket_cls.return_value = mock_sock
             mock_sock.connect_ex.return_value = 1
@@ -146,7 +147,7 @@ class TestCheckTcpConnectivity:
             assert result is False
 
     def test_connectivity_socket_error(self):
-        with patch("helper.socket.socket") as mock_socket_cls:
+        with patch("production_test_framework.helper.socket.socket") as mock_socket_cls:
             mock_socket_cls.side_effect = socket.error("connection refused")
 
             result = check_tcp_connectivity("badhost", 9999)
@@ -154,7 +155,7 @@ class TestCheckTcpConnectivity:
             assert result is False
 
     def test_uses_custom_timeout(self):
-        with patch("helper.socket.socket") as mock_socket_cls:
+        with patch("production_test_framework.helper.socket.socket") as mock_socket_cls:
             mock_sock = MagicMock()
             mock_socket_cls.return_value = mock_sock
             mock_sock.connect_ex.return_value = 0
@@ -167,7 +168,7 @@ class TestCheckTcpConnectivity:
 class TestWaitForTcpConnectivity:
     """Tests for wait_for_tcp_connectivity."""
 
-    @patch("helper.check_tcp_connectivity")
+    @patch("production_test_framework.helper.check_tcp_connectivity")
     def test_returns_true_when_immediate_success(self, mock_check):
         mock_check.return_value = True
 
@@ -176,8 +177,8 @@ class TestWaitForTcpConnectivity:
         assert result is True
         assert mock_check.call_count >= 1
 
-    @patch("helper.check_tcp_connectivity")
-    @patch("helper.time.sleep")
+    @patch("production_test_framework.helper.check_tcp_connectivity")
+    @patch("production_test_framework.helper.time.sleep")
     def test_returns_false_on_timeout(self, mock_sleep, mock_check):
         mock_check.return_value = False
 
@@ -197,7 +198,7 @@ class TestGetMimirBaseUrl:
 class TestQueryMimir:
     """Tests for query_mimir."""
 
-    @patch("helper.requests.get")
+    @patch("production_test_framework.helper.requests.get")
     def test_builds_url_and_calls_get(self, mock_get):
         mock_resp = MagicMock()
         mock_get.return_value = mock_resp
@@ -211,7 +212,7 @@ class TestQueryMimir:
         assert call_args[1]["params"] == {"query": "up"}
         assert call_args[1]["timeout"] == 10
 
-    @patch("helper.requests.get")
+    @patch("production_test_framework.helper.requests.get")
     def test_default_params_and_timeout(self, mock_get):
         mock_get.return_value = MagicMock()
 

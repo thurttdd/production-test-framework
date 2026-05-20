@@ -44,10 +44,9 @@ USER $USERNAME
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/${HOME}/.local/bin:/app/.venv/bin:${PATH}"
 
-# python
+# python: framework is installed into .venv via uv sync (editable workspace install;
+# changes under src/production_test_framework/ are picked up without rebuilding the image).
 RUN uv python install 3.14
-
-ENV PYTHONPATH=/app
 
 # Copy framework (current context = repo root)
 COPY --chown=$USERNAME:$USERNAME . ./framework/
@@ -59,6 +58,11 @@ echo "ssh_args = -o ForwardAgent=yes -o ControlMaster=auto -o ControlPersist=60s
 EOF
 
 WORKDIR /app/framework
+
+# Optional: set at image build time when .git is unavailable (e.g. trimmed context).
+# Tag releases pass SETUPTOOLS_SCM_PRETEND_VERSION from CI (see .github/workflows/docker.yml).
+ARG SETUPTOOLS_SCM_PRETEND_VERSION=
+ENV SETUPTOOLS_SCM_PRETEND_VERSION=${SETUPTOOLS_SCM_PRETEND_VERSION}
 
 # Install all of the required python dependencies
 RUN uv venv --clear && uv sync --all-packages && uv cache clean

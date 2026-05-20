@@ -12,6 +12,7 @@ ansible/inventory-single-node.ini
 
 # Python
 .venv/
+src/production_test_framework/_version.py
 __pycache__/
 *.py[cod]
 *$py.class

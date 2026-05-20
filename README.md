@@ -272,6 +272,26 @@ If tests fail:
 4. Review test output for specific error messages
 
 
+## Versioning and releases
+
+The Python package version is derived from **git tags**, not a static value in `pyproject.toml`. Push an annotated or lightweight tag with a `v` prefix and a [PEP 440](https://peps.python.org/pep-0440/) version:
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+- **Released builds** (on tag `v*`) use that version (for example `0.2.0` from tag `v0.2.0`).
+- **Development builds** (commits after the latest tag) get a dev suffix such as `0.2.0.dev3+gabc1234`.
+- **Docker images** on tag push are tagged with the same `v*` name; the image build sets the package version from the tag.
+
+To build or install locally without a tag, either create a tag or set a pretend version:
+
+```bash
+export SETUPTOOLS_SCM_PRETEND_VERSION=0.2.0.dev
+uv sync
+```
+
 ## Getting Help
 
 For more information:
