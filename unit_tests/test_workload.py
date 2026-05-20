@@ -8,6 +8,7 @@ import time
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from production_test_framework.ssh import CommandResult
 from production_test_framework.vllm import InferenceResult
 from production_test_framework.workload.inferencex_workload import InferencexWorkload
@@ -198,7 +199,7 @@ class TestInferencexWorkload:
         w.start()
         w._completion_fut.result(timeout=10.0)
         cmd = mock_inferencex_run.call_args[0][0]
-        assert cmd[:3] == ["sudo", "docker", "run"]
+        assert cmd[:2] == ["docker", "run"]
         assert "--host" in cmd
         assert "vllm.svc" in cmd
         assert "--port" in cmd
@@ -263,9 +264,7 @@ class TestPromptWorkload:
         ) as m:
             backend = MagicMock()
             backend.wait_for_ready = MagicMock(return_value=True)
-            backend.complete = MagicMock(
-                return_value=InferenceResult(success=True, text="model output")
-            )
+            backend.complete = MagicMock(return_value=InferenceResult(success=True, text="model output"))
             m.return_value = backend
             yield m, backend
 
@@ -314,9 +313,7 @@ class TestPromptWorkload:
 
     def test_get_result_returns_inference_text_after_completion(self, mock_vllm_client_class):
         mock_cls, backend = mock_vllm_client_class
-        backend.complete = MagicMock(
-            return_value=InferenceResult(success=True, text="final text")
-        )
+        backend.complete = MagicMock(return_value=InferenceResult(success=True, text="final text"))
         wl = PromptWorkload("prompt")
         wl.start()
         wl._completion_fut.result(timeout=10.0)
