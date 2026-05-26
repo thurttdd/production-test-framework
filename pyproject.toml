@@ -9,6 +9,7 @@ readme = "README.md"
 license = { text = "FSL-1.1-ALv2" }
 requires-python = ">=3.14"
 dependencies = [
+    "docopt>=0.6.2",
     "ansible-core>=2.14",
     "paramiko>=3.0",
     "requests>=2.28",
@@ -19,6 +20,9 @@ dependencies = [
     "pytest>=7.0",
     "qase-pytest>=8.3.0",
 ]
+
+[project.scripts]
+ptf-switch = "production_test_framework.switch.switch_status:main"
 
 [project.optional-dependencies]
 dev = [
