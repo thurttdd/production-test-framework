@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: FSL-1.1-ALv2
+# Copyright (c) 2025 Delos Data, Inc.
+
 """Composable NVUE URL path segments (Cumulus Linux 5.12 OpenAPI)."""
 
 BRIDGE_DOMAIN = "br_default"

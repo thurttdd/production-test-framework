@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: FSL-1.1-ALv2
+# Copyright (c) 2025 Delos Data, Inc.
+
 """NVIDIA Spectrum switch driver via Cumulus Linux NVUE (read-only)."""
 
 import logging
@@ -9,7 +12,6 @@ from requests.auth import HTTPBasicAuth
 from production_test_framework.switch.exceptions import SwitchAPIError
 from production_test_framework.switch.models import NetworkSwitchConfig, NetworkSwitchStatus, Port, Vlan
 from production_test_framework.switch.network_switch import NetworkSwitch
-from production_test_framework.switch.port_sort import port_id_sort_key
 from production_test_framework.switch.nvidia.nvue_paths import (
     BRIDGE_DOMAIN,
     BRIDGE_DOMAIN_VLANS_PATH,
@@ -19,6 +21,7 @@ from production_test_framework.switch.nvidia.nvue_paths import (
     SYSTEM_PATH,
     interface_path,
 )
+from production_test_framework.switch.port_sort import port_id_sort_key
 
 requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
 

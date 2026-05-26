@@ -1,8 +1,11 @@
+# SPDX-License-Identifier: FSL-1.1-ALv2
+# Copyright (c) 2025 Delos Data, Inc.
+
 """Read-only switch status CLI.
 
 Usage:
-    ptf-switch --hostname=HOSTNAME --username=USERNAME [--password=PASSWORD] [--switch-type=TYPE] [--log-level=LEVEL]
-    ptf-switch (-h | --help)
+    switch-status --hostname=HOSTNAME --username=USERNAME [--password=PASSWORD] [--switch-type=TYPE] [--log-level=LEVEL]
+    switch-status (-h | --help)
 
 Options:
     -h --help                   Show this help message and exit
@@ -146,10 +149,7 @@ def _format_port_table(
     indent: str,
 ) -> list[str]:
     columns = ("Port", "Admin", "Oper", "Description")
-    widths = [
-        max(len(columns[i]), *(len(row[i]) for row in rows))
-        for i in range(len(columns))
-    ]
+    widths = [max(len(columns[i]), *(len(row[i]) for row in rows)) for i in range(len(columns))]
 
     def fmt_row(cells: tuple[str, ...], column_widths: list[int], *, header: bool = False) -> str:
         parts: list[str] = []
@@ -197,9 +197,7 @@ def format_vlans(vlans: list[Vlan], *, use_color: bool | None = None) -> str:
         if not vlan.ports:
             lines.append(_paint("    (no member ports)", _DIM, enabled=enabled))
             continue
-        lines.extend(
-            _format_port_table(_port_table_rows(sort_ports(list(vlan.ports))), enabled=enabled, indent="    ")
-        )
+        lines.extend(_format_port_table(_port_table_rows(sort_ports(list(vlan.ports))), enabled=enabled, indent="    "))
 
     return "\n".join(lines) + "\n\n"
 

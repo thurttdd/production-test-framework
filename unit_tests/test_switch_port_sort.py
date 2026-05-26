@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: FSL-1.1-ALv2
+# Copyright (c) 2025 Delos Data, Inc.
+
 from production_test_framework.switch.models import Port
 from production_test_framework.switch.port_sort import port_id_sort_key, sort_ports
 

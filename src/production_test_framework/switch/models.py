@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: FSL-1.1-ALv2
+# Copyright (c) 2025 Delos Data, Inc.
+
 from dataclasses import dataclass, field
 
 
@@ -34,6 +37,7 @@ class SwitchProcess:
     end_time: str
     cpu_usage: float
     memory_usage: float
+
 
 @dataclass(frozen=True)
 class NetworkSwitchStatus:

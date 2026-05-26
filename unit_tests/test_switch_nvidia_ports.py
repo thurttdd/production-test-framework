@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: FSL-1.1-ALv2
+# Copyright (c) 2025 Delos Data, Inc.
+
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -28,9 +31,7 @@ def interfaces_payload() -> dict:
 
 
 def test_parse_ports_from_fixture(interfaces_payload: dict) -> None:
-    switch = NvidiaCumulusSwitch(
-        NetworkSwitchConfig(host="h", username="u", password="p", verify_tls=False)
-    )
+    switch = NvidiaCumulusSwitch(NetworkSwitchConfig(host="h", username="u", password="p", verify_tls=False))
     ports = switch._parse_ports(interfaces_payload)
 
     assert [port.id for port in ports] == ["eth0", "lo", "swp1", "swp2"]
