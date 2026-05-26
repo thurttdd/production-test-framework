@@ -17,17 +17,12 @@ dependencies = [
     "opentelemetry-api>=1.20",
     "opentelemetry-sdk>=1.20",
     "opentelemetry-exporter-otlp-proto-grpc>=1.20",
-    "pytest>=7.0",
     "qase-pytest>=8.3.0",
+    "pip>=26.1.1",
 ]
 
 [project.scripts]
-ptf-switch = "production_test_framework.switch.switch_status:main"
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0",
-]
+switch-status = "production_test_framework.switch.switch_status:main"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
@@ -40,7 +35,7 @@ source = "vcs"
 version-file = "src/production_test_framework/_version.py"
 
 [tool.pytest.ini_options]
-cache_dir = "/app/framework/.pytest_cache"
+addopts = ["--spec"]
 #log_cli = "true"
 #log_cli_level = "INFO"
 
@@ -54,6 +49,8 @@ members = ["unit_tests"]
 dev = [
     "pre-commit>=4.6.0",
     "ruff>=0.15.13",
+    "pytest>=7.0",
+    "pytest-spec>=6.0.0",
 ]
 
 [tool.ruff]

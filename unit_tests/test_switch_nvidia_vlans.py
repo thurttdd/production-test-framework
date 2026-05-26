@@ -89,5 +89,5 @@ def test_vlan_missing_raises(
     mock_get.return_value = mock_response
 
     switch = NvidiaCumulusSwitch(switch_config)
-    with pytest.raises(SwitchAPIError, match="VLAN '999' not found"):
+    with pytest.raises(SwitchAPIError, match="VLAN 999 not found"):
         switch.vlan("999")
