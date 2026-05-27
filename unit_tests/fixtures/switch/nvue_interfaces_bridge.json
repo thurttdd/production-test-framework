@@ -1,0 +1,50 @@
+{
+  "swp1": {
+    "bridge": {
+      "domain": {
+        "br_default": {
+          "vlan": {
+            "10": {}
+          }
+        }
+      }
+    },
+    "link": {
+      "admin-status": "up",
+      "oper-status": "up"
+    },
+    "description": "server-1"
+  },
+  "swp2": {
+    "bridge": {
+      "domain": {
+        "br_default": {
+          "vlan": {
+            "10": {},
+            "20": {}
+          }
+        }
+      }
+    },
+    "link": {
+      "admin-status": "up",
+      "oper-status": "down"
+    }
+  },
+  "swp3": {
+    "bridge": {
+      "domain": {
+        "br_default": {
+          "vlan": {
+            "20": {}
+          }
+        }
+      }
+    },
+    "link": {
+      "state": {
+        "up": {}
+      }
+    }
+  }
+}

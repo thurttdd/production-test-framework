@@ -33,7 +33,7 @@ if [ -d /app/charts ]; then
 fi
 
 # Make sure all python dependencies are installed
-uv sync --all-packages
+uv sync --all-packages --group dev
 
 # RUN_MAKE_TARGET: when set, run that make target and exit (no banner/help, no shell)
 if [ -n "${RUN_MAKE_TARGET}" ]; then

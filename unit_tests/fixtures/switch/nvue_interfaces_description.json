@@ -1,0 +1,29 @@
+{
+  "eth0": {
+    "link": {
+      "admin-status": "up",
+      "oper-status": "up"
+    },
+    "description": "mgmt"
+  },
+  "lo": {
+    "link": {
+      "admin-status": "up",
+      "oper-status": "unknown"
+    }
+  },
+  "swp1": {
+    "link": {
+      "admin-status": "up",
+      "oper-status": "up"
+    },
+    "description": "server-1"
+  },
+  "swp2": {
+    "link": {
+      "admin-status": "down",
+      "oper-status": "down"
+    },
+    "description": ""
+  }
+}
